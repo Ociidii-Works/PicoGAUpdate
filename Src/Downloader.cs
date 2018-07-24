@@ -10,6 +10,7 @@ namespace PicoGAUpdate
         public static bool Success;
         public static bool DownloadCancelled;
         private static WebClient _wc;
+        private static long totalDLSize = 0;
 
         private bool _printing;
 
@@ -66,6 +67,20 @@ namespace PicoGAUpdate
             }
         }
 
+        private string AutoSpacer(long input)
+        {
+            if (input < 10)
+            {
+                return "   ";
+            }
+            if (input < 100)
+            {
+                return "  ";
+            }
+            //if (input < 1000)
+            return " ";
+        }
+
         /// <summary>
         ///  Show the progress of the download in a progressbar
         /// </summary>
@@ -77,8 +92,14 @@ namespace PicoGAUpdate
             {
                 if (e != null)
                 {
-                    Program.RollingOutput(e.ProgressPercentage + "% | " + (e.BytesReceived / 1024 / 1024) + " bytes out of " +
-                                          (e.TotalBytesToReceive / 1024 / 1024) + "MB");
+                    if (totalDLSize == 0)
+                    {
+                        totalDLSize = (e.TotalBytesToReceive / 1024 / 1024);
+                    }
+                    long currentDLSize = (e.BytesReceived / 1024 / 1024);
+                    Program.RollingOutput(e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDLSize
+                        + AutoSpacer(currentDLSize) + "MB / " +
+                                          totalDLSize + " MB");
                     _printing = false;
                 }
 
