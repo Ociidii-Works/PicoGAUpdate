@@ -35,6 +35,7 @@ namespace PicoGAUpdate
             foreach (Match m in m1)
             {
                 string value = m.Groups[1].Value;
+                //Console.WriteLine("[m] " + value + "\n");
                 LinkItem i = new LinkItem();
                 // 3.
                 // Get href attribute.
@@ -43,12 +44,31 @@ namespace PicoGAUpdate
                 if (m2.Success)
                 {
                     i.Href = m2.Groups[1].Value;
+
+                    // match driver thread format
+                    Match m3 = Regex.Match(i.Href, @"^/r/nvidia/comments/(.*?)/driver_(.*?)_faq",
+                        RegexOptions.Singleline);
+                    if (m3.Success)
+                    {
+                        Console.WriteLine("LINK!!!!!! \n\n" + i.Href + "\n\n");
+                    }
+                    else
+                    {
+#if DEBUG
+                        if (i.Href.Contains("driver"))
+                        {
+                            Console.WriteLine("Regex Failed on => " + i.Href);
+                        }
+#endif
+                        // Skip to next link
+                        continue;
+                    }
                 }
 
                 // 4.
                 // Remove inner tags from text.
                 string t = Regex.Replace(value, @"\s*<.*?>\s*", "",
-                    RegexOptions.Singleline);
+                RegexOptions.Singleline);
                 // TODO: Regex for 'Driver 382.05FAQ/Discussion'
                 if (t.Contains("Driver") && t.Contains("FAQ/Discussion") && !t.Contains("Latest"))
                 {
@@ -62,7 +82,7 @@ namespace PicoGAUpdate
                     }
                     i.Text = t;
 #if DEBUG
-                    Console.WriteLine("=>'" + t + "'");
+                    Console.WriteLine("Found Thread =>'" + t + "'");
 #endif
                     list.Add(i);
                 }

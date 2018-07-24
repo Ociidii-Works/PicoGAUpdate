@@ -267,7 +267,7 @@ namespace PicoGAUpdate
 
                     if (!OptionContainer.DownloadOnly)
                     {
-                        InstallDriver(newFile);
+                        InstallDriver(newFile, version);
                     }
 
                     if (!OptionContainer.KeepDownloaded)
@@ -286,7 +286,7 @@ namespace PicoGAUpdate
             }
         }
 
-        private static void InstallDriver(string installerPath)
+        private static void InstallDriver(string installerPath, float version)
         {
             string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
             try
@@ -344,7 +344,20 @@ namespace PicoGAUpdate
 #endif
                     wProcess.Start();
                     wProcess.WaitForExit();
-                    installerPath = extractPath + @"\setup.exe";
+                    // Move to C:\NVIDIA (where the installer expects it) and remove Win10_64\International\ hierarchy levels
+                    string newDir = @"C:\NVIDIA\DisplayDriver\" + version.ToString();
+                    if (Directory.Exists(newDir))
+                    {
+                        Console.WriteLine("Deleting " + newDir);
+                        Safe.DirectoryDelete(newDir);
+                    }
+                    //string fromPath = extractPath + @"\Win10_64\International\";
+                    Console.WriteLine("Moving " + extractPath + " => " + newDir);
+                    Directory.Move(extractPath, newDir);
+                    // NOOO!! See below; Cannot delete this.
+                    //extractPath = newDir;
+                    installerPath = newDir + @"\setup.exe";
+                    Console.Write("Done.");
 
                     // Hack up the installer a little to remove unwanted "features" such as Telemetry
                     //if(GOptions.Contains("strip"))
@@ -379,7 +392,10 @@ namespace PicoGAUpdate
             }
             finally
             {
-                Safe.DirectoryDelete(extractPath);
+                if (!OptionContainer.KeepDownloaded)
+                {
+                    Safe.DirectoryDelete(extractPath);
+                }
             }
 
             ExitImmediately = true;
@@ -406,14 +422,14 @@ namespace PicoGAUpdate
                 WebClient w = new WebClient();
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
 #if DEBUG
-                //Console.WriteLine(s.ToString());
+                File.WriteAllText(@"C:\reddit.html", s);
 #endif
 
                 List<float> driverTitles = new List<float>();
                 foreach (LinkItem i in LinkFinder.Find(s))
                 {
 #if DEBUG
-                    //Console.WriteLine(i.ToString());
+                    Console.WriteLine(i.ToString());
 #endif
                     string iS = i.Text;
                     {
@@ -425,7 +441,7 @@ namespace PicoGAUpdate
                             // HTTPS URL example:  'https://www.reddit.com/r/nvidia/comments/6k8pas/driver_38476_faqdiscussion_thread/    Driver 384.76 FAQ/Discussion Thread'
                             // Reddit URL example: '/r/nvidia/comments/4stpdj/driver_36881_faqdiscussion_thread/  DiscussionDriver 368.81 FAQ/Discussion Thread'
                             // We need to strip the parts we don't want to uniformize the parsing
-                            iS = iS.Replace("https://www.reddit.com/r/nvidia/comments", "/r/nvidia/comments");
+                            //iS = iS.Replace("https://www.reddit.com/r/nvidia/comments", "/r/nvidia/comments");
                             //string iFlat = SpaceCompactor.CompactWhitespaces(iS);
                             // NOTE: Sometimes reddit returns https, sometimes the /r/ URL, the latter does not contain a space between
                             // the version and "FAQ", in which case we need to add it for split to work properly.
@@ -457,6 +473,9 @@ namespace PicoGAUpdate
                             //
                             //                            driverTitles.Add(StringToFloat(parsedVersion));
 
+#if DEBUG
+                            Console.WriteLine("iS = '" + iS + "'");
+#endif
                             string[] prefix = i.Text.Split(new string[] { "FAQ" }, StringSplitOptions.None);
                             string version = prefix.First().Split(new string[] { "Driver " }, StringSplitOptions.None).Last();
 #if DEBUG
@@ -520,6 +539,8 @@ namespace PicoGAUpdate
 
     internal static class WebsiteUrls
     {
-        public const string DriverListSource = "https://www.reddit.com/r/nvidia/search?q=FAQ/Discussion&restrict_sr=1&sort=new";
+        // Don't abuse the search API
+        //public const string DriverListSource = "https://www.reddit.com/r/nvidia/search?q=FAQ/Discussion&restrict_sr=1&sort=new";
+        public const string DriverListSource = "https://www.reddit.com/r/nvidia/hot/";
     }
 }
