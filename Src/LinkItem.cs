@@ -50,7 +50,30 @@ namespace PicoGAUpdate
                         RegexOptions.Singleline);
                     if (m3.Success)
                     {
+#if DEBUG
                         Console.WriteLine("LINK!!!!!! \n\n" + i.Href + "\n\n");
+#endif
+                        // 4.
+                        // Remove inner tags from text.
+                        string t = Regex.Replace(value, @"\s*<.*?>\s*", "",
+                        RegexOptions.Singleline);
+                        // TODO: Regex for 'Driver 382.05FAQ/Discussion'
+                        if (t.Contains("Driver") && t.Contains("FAQ/Discussion") && !t.Contains("Latest"))
+                        {
+                            if (t.Contains("GeForce Hotfix Driver"))
+                            {
+                                string n = t.Replace("GeForce Hotfix Driver", "Driver");
+#if DEBUG
+                        Console.WriteLine(t + "=>" + n);
+#endif
+                                t = n;
+                            }
+                            i.Text = t;
+#if DEBUG
+                    Console.WriteLine("Found Thread =>'" + t + "'");
+#endif
+                            list.Add(i);
+                        }
                     }
                     else
                     {
@@ -61,30 +84,8 @@ namespace PicoGAUpdate
                         }
 #endif
                         // Skip to next link
-                        continue;
+                        //continue;
                     }
-                }
-
-                // 4.
-                // Remove inner tags from text.
-                string t = Regex.Replace(value, @"\s*<.*?>\s*", "",
-                RegexOptions.Singleline);
-                // TODO: Regex for 'Driver 382.05FAQ/Discussion'
-                if (t.Contains("Driver") && t.Contains("FAQ/Discussion") && !t.Contains("Latest"))
-                {
-                    if (t.Contains("GeForce Hotfix Driver"))
-                    {
-                        string n = t.Replace("GeForce Hotfix Driver", "Driver");
-#if DEBUG
-                        Console.WriteLine(t + "=>" + n);
-#endif
-                        t = n;
-                    }
-                    i.Text = t;
-#if DEBUG
-                    Console.WriteLine("Found Thread =>'" + t + "'");
-#endif
-                    list.Add(i);
                 }
             }
             return list;
