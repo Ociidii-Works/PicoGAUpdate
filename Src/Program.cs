@@ -349,7 +349,7 @@ namespace PicoGAUpdate
                     if (Directory.Exists(newDir))
                     {
                         Console.WriteLine("Deleting " + newDir);
-                        Safe.DirectoryDelete(newDir);
+                        Safe.DirectoryDelete(newDir, false);
                     }
                     //string fromPath = extractPath + @"\Win10_64\International\";
                     Console.WriteLine("Moving " + extractPath + " => " + newDir);

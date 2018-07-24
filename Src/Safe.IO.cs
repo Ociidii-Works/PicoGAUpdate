@@ -6,9 +6,12 @@ namespace PicoGAUpdate
 {
     internal static class Safe
     {
-        public static void DirectoryDelete(string targetDir)
+        public static void DirectoryDelete(string targetDir, bool print = true)
         {
-            Console.WriteLine("Deleting " + targetDir);
+            if (print)
+            {
+                Console.WriteLine("Deleting " + targetDir);
+            }
             try
             {
                 if (string.IsNullOrEmpty(targetDir))
