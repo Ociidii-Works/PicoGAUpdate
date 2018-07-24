@@ -232,32 +232,31 @@ namespace PicoGAUpdate
                 // TODO: Figure what to do when downloading an older version
                 string versionS = version.ToString(CultureInfo.InvariantCulture);
                 newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-                if (File.Exists(newFile) && !OptionContainer.ForceDownload)
+                if ((!OptionContainer.ForceDownload || OptionContainer.KeepDownloaded) && File.Exists(newFile))
                 {
-#if DEBUG
+                    //#if DEBUG
                     Console.WriteLine("Using Existing installer at " + newFile);
-#endif
+                    //#endif
                     DownloadDone = true;
                     NewDownloader.Success = true;
                 }
-                else if (!File.Exists(newFile) || OptionContainer.ForceDownload)
+                else
                 {
                     Console.WriteLine("Downloading Driver version " + version + "from " + url + Environment.NewLine + "to " + newFile + "...");
                     Task.Run(() => new NewDownloader().Download(url, newFile));
-                }
-                while (!DownloadDone)
-                {
-                    // wait
-                }
-
-                if (NewDownloader.Success)
-                {
-                    if (File.Exists(newFile))
+                    while (!DownloadDone)
                     {
-                        Console.WriteLine("Deleting " + newFile);
-                        File.Delete(newFile);
+                        // wait
                     }
-                    NewDownloader.RenameDownload(newFile);
+                    if (NewDownloader.Success)
+                    {
+                        if (File.Exists(newFile))
+                        {
+                            Console.WriteLine("Deleting " + newFile);
+                            File.Delete(newFile);
+                        }
+                        NewDownloader.RenameDownload(newFile);
+                    }
                 }
                 if (!string.IsNullOrEmpty(newFile) && File.Exists(newFile))
                 {
