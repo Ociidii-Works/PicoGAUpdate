@@ -48,8 +48,8 @@ namespace PicoGAUpdate
         public static Options ForceDownload = new Options("--force", "-f", false,
             "Downloads the latest or specified driver version even if up-to-date.");
 
-        public static Options GraphicUI = new Options("--gui", "-g", false,
-            "Run the installer graphic interface (as opposed to silently). This allows customizing the driver installation.");
+        public static Options Silent = new Options("--silent", "-s", false,
+            "Run the installer silently. This however installs everything.");
 
         public static Options KeepDownloaded = new Options("--keep", "-k", false,
             "Do not delete the downloaded driver before exiting the program.");
@@ -176,7 +176,7 @@ namespace PicoGAUpdate
                 helpParagraph += Clean.GetPaddedHelpText();
                 helpParagraph += DownloadOnly.GetPaddedHelpText();
                 helpParagraph += ForceDownload.GetPaddedHelpText();
-                helpParagraph += GraphicUI.GetPaddedHelpText();
+                helpParagraph += Silent.GetPaddedHelpText();
                 helpParagraph += KeepDownloaded.GetPaddedHelpText();
                 helpParagraph += NoUpdate.GetPaddedHelpText();
                 Console.WriteLine(helpParagraph);
@@ -210,9 +210,9 @@ namespace PicoGAUpdate
                             ForceDownload.SetValue(true);
                         }
 
-                        if (variable == GraphicUI.GetShortSwitch() || variable == GraphicUI.GetLongSwitch())
+                        if (variable == Silent.GetShortSwitch() || variable == Silent.GetLongSwitch())
                         {
-                            GraphicUI.SetValue(true);
+                            Silent.SetValue(true);
                         }
 
                         if (variable == KeepDownloaded.GetShortSwitch() || variable == KeepDownloaded.GetLongSwitch())

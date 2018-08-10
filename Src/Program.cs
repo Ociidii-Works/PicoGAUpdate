@@ -242,7 +242,9 @@ namespace PicoGAUpdate
                 }
                 else
                 {
-                    Console.WriteLine("Downloading Driver version " + version + "from " + url + Environment.NewLine + "to " + newFile + "...");
+                    // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe
+                    // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
+                    Console.WriteLine("Downloading Driver version " + version + " from " + url + Environment.NewLine + "to " + newFile + "...");
                     Task.Run(() => new NewDownloader().Download(url, newFile));
                     while (!DownloadDone)
                     {
@@ -316,11 +318,9 @@ namespace PicoGAUpdate
 
                 if (!string.IsNullOrEmpty(winRar))
                 {
-                    legacySilent = !OptionContainer.GraphicUI;
 #if DEBUG
                     Console.WriteLine("WinRAR = " + winRar);
 #endif
-
                     if (!Directory.Exists(extractPath))
                     {
                         Console.WriteLine("Creating " + extractPath);
@@ -372,7 +372,7 @@ namespace PicoGAUpdate
 
                 Process p = new Process();
                 p.StartInfo.FileName = installerPath ?? throw new ArgumentNullException(nameof(installerPath));
-                if (legacySilent)
+                if (OptionContainer.Silent)
                 {
                     Console.WriteLine("Running Installer silently... Your monitor(s) may flicker several times...");
                     p.StartInfo.Arguments = "-s";
@@ -403,11 +403,9 @@ namespace PicoGAUpdate
 
         private static void Main(string[] args)
         {
-#if !DEBUG
-            Console.Clear();
-#endif
             OptionContainer.Options.Parse(args);
 #if !DEBUG
+            Console.Clear();
             int H = 15;
             int W = 80;
             Console.SetWindowSize(W, H);
@@ -421,70 +419,29 @@ namespace PicoGAUpdate
                 Console.WriteLine("Finding latest Nvidia Driver Version...");
                 WebClient w = new WebClient();
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
-#if DEBUG
-                File.WriteAllText(@"C:\reddit.html", s);
-#endif
+                //#if DEBUG
+                //                File.WriteAllText(@"C:\reddit.html", s);
+                //#endif
 
                 List<float> driverTitles = new List<float>();
                 foreach (LinkItem i in LinkFinder.Find(s))
                 {
 #if DEBUG
-                    Console.WriteLine(i.ToString());
+                    //Console.WriteLine(i.ToString());
 #endif
                     string iS = i.Text;
                     {
-                        //Console.WriteLine("iS = '" + iS + "'");
-                        //if (iS.Contains("FAQ/Discussion Thread") && !iS.Contains("Latest Driver"))
-                        //if (iS.Contains("FAQ/Discussion"))
+#if DEBUG
+                        Console.WriteLine("iS = '" + iS + "'");
+#endif
+                        string[] prefix = i.Text.Split(new string[] { "FAQ" }, StringSplitOptions.None);
+                        string version = prefix.First().Split(new string[] { "Driver " }, StringSplitOptions.None).Last();
+#if DEBUG
+                        Console.WriteLine(version);
+#endif
+                        if (version.Contains("."))
                         {
-                            //Console.WriteLine("Filtered iS = '" + iS + "'");
-                            // HTTPS URL example:  'https://www.reddit.com/r/nvidia/comments/6k8pas/driver_38476_faqdiscussion_thread/    Driver 384.76 FAQ/Discussion Thread'
-                            // Reddit URL example: '/r/nvidia/comments/4stpdj/driver_36881_faqdiscussion_thread/  DiscussionDriver 368.81 FAQ/Discussion Thread'
-                            // We need to strip the parts we don't want to uniformize the parsing
-                            //iS = iS.Replace("https://www.reddit.com/r/nvidia/comments", "/r/nvidia/comments");
-                            //string iFlat = SpaceCompactor.CompactWhitespaces(iS);
-                            // NOTE: Sometimes reddit returns https, sometimes the /r/ URL, the latter does not contain a space between
-                            // the version and "FAQ", in which case we need to add it for split to work properly.
-                            //if (iFlat == null)
-                            //{
-                            //    return;
-                            //}
-
-                            //if (iFlat.StartsWith("/r/nvidia/comments/"))
-                            //{
-                            //    // Funny Reddit returned a local link; handle the missing space here
-                            //    iFlat = iFlat.Replace("FAQ/Discussion", " FAQ/Discussion");
-                            //    // That url also contains web formatting victims, such as "DiscussionDriver"
-                            //    iFlat = iFlat.Replace(" DiscussionDriver", "");
-                            //}
-                            //else
-                            //{
-                            //    iFlat = iFlat.Replace(" Driver", "");
-                            //}
-
-                            //#if DEBUG
-                            //                            Console.WriteLine("i_flat = '" + iFlat + "'");
-                            //#endif
-                            //                            string[] titleNolink = iFlat.Split(' ');
-                            //                            string parsedVersion = titleNolink.GetValue(1)?.ToString();
-                            //#if DEBUG
-                            //                            Console.WriteLine("Parsed Version = '" + parsedVersion + "'");
-                            //#endif
-                            //
-                            //                            driverTitles.Add(StringToFloat(parsedVersion));
-
-#if DEBUG
-                            Console.WriteLine("iS = '" + iS + "'");
-#endif
-                            string[] prefix = i.Text.Split(new string[] { "FAQ" }, StringSplitOptions.None);
-                            string version = prefix.First().Split(new string[] { "Driver " }, StringSplitOptions.None).Last();
-#if DEBUG
-                            Console.WriteLine(version);
-#endif
-                            if (version.Contains("."))
-                            {
-                                driverTitles.Add(StringToFloat(version));
-                            }
+                            driverTitles.Add(StringToFloat(version));
                         }
                     }
                 }
@@ -541,6 +498,7 @@ namespace PicoGAUpdate
     {
         // Don't abuse the search API
         //public const string DriverListSource = "https://www.reddit.com/r/nvidia/search?q=FAQ/Discussion&restrict_sr=1&sort=new";
-        public const string DriverListSource = "https://www.reddit.com/r/nvidia/hot/";
+        // TODO: Cache results to avoid spamming the site
+        public const string DriverListSource = "https://old.reddit.com/r/nvidia/search?q=Driver%20FAQ/Discussion&restrict_sr=1&sort=new";
     }
 }
