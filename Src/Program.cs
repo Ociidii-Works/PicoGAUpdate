@@ -387,7 +387,7 @@ namespace PicoGAUpdate
                     // Hack up the installer a little to remove unwanted "features" such as Telemetry
                     //if(GOptions.Contains("strip"))
                     {
-                        Safe.DirectoryDelete(extractPath + @"\NvTelemetry");
+                        Safe.DirectoryDelete(newDir + @"\NvTelemetry");
                     }
                 }
                 else
