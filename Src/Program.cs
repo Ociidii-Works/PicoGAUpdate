@@ -288,6 +288,26 @@ namespace PicoGAUpdate
             }
         }
 
+        public static void CopyAll(DirectoryInfo source, DirectoryInfo target)
+        {
+            Directory.CreateDirectory(target.FullName);
+
+            // Copy each file into the new directory.
+            foreach (FileInfo fi in source.GetFiles())
+            {
+                Console.WriteLine(@"Copying {0}\{1}", target.FullName, fi.Name);
+                fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
+            }
+
+            // Copy each subdirectory using recursion.
+            foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
+            {
+                DirectoryInfo nextTargetSubDir =
+                    target.CreateSubdirectory(diSourceSubDir.Name);
+                CopyAll(diSourceSubDir, nextTargetSubDir);
+            }
+        }
+
         private static void InstallDriver(string installerPath, float version)
         {
             string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
@@ -342,6 +362,9 @@ namespace PicoGAUpdate
                     Console.WriteLine(String.Format(" % \"{0}\" {1}", wProcess.StartInfo.FileName,
                     wProcess.StartInfo.Arguments));
 #endif
+                    // Try to create the full path just in case...
+                    Directory.CreateDirectory(@"C:\NVIDIA");
+                    Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
                     wProcess.Start();
                     wProcess.WaitForExit();
                     // Move to C:\NVIDIA (where the installer expects it) and remove Win10_64\International\ hierarchy levels
@@ -351,9 +374,11 @@ namespace PicoGAUpdate
                         Console.WriteLine("Deleting " + newDir);
                         Safe.DirectoryDelete(newDir, false);
                     }
-                    //string fromPath = extractPath + @"\Win10_64\International\";
-                    Console.WriteLine("Moving " + extractPath + " => " + newDir);
-                    Directory.Move(extractPath, newDir);
+                    Directory.CreateDirectory(newDir);
+                    Console.WriteLine("Copying " + extractPath + " => " + newDir);
+                    System.IO.DirectoryInfo dirsrc = new System.IO.DirectoryInfo(extractPath);
+                    System.IO.DirectoryInfo dirtarget = new System.IO.DirectoryInfo(newDir);
+                    CopyAll(dirsrc, dirtarget);
                     // NOOO!! See below; Cannot delete this.
                     //extractPath = newDir;
                     installerPath = newDir + @"\setup.exe";
@@ -379,7 +404,7 @@ namespace PicoGAUpdate
                 }
                 else
                 {
-                    Console.WriteLine("Running GUI Installer...");
+                    Console.WriteLine("Running GUI Installer from " + p.StartInfo.FileName + "...");
                 }
 
                 p.Start();
