@@ -56,7 +56,7 @@ namespace PicoGAUpdate
             return string_in;
         }
 
-        public static bool IsOutOfDate(float newVersion)
+        public static bool IsOutOfDate(string newVersion)
         {
             if (OptionContainer.ForceDownload)
             {
@@ -64,7 +64,7 @@ namespace PicoGAUpdate
             }
             Console.WriteLine("Determining driver version...");
             // Add fallback value required for math, if driver is missing/not detected.
-            float currVer = 0.0f;
+            string currVer = "000.00";
             //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
             ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
             ManagementObjectCollection objCollection = objSearcher.Get();
@@ -84,13 +84,13 @@ namespace PicoGAUpdate
                         {
                             string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
                             Console.WriteLine("Current Driver Version: " + nvidiaVersion);
-                            currVer = StringToFloat(nvidiaVersion);
+                            currVer = nvidiaVersion;
                         }
                     }
                 }
             }
 
-            if (currVer < newVersion)
+            if (StringToFloat(currVer) < StringToFloat(newVersion))
             {
                 Console.WriteLine("A new driver version is available! ({0} => {1})", currVer, newVersion);
                 return true;
@@ -150,7 +150,16 @@ namespace PicoGAUpdate
             ci.NumberFormat.CurrencyDecimalSeparator = ".";
             if (input.Contains(ci.NumberFormat.CurrencyDecimalSeparator))
             {
-                float version = float.Parse(input ?? throw new ArgumentNullException(nameof(input)), NumberStyles.Any, ci);
+                // Add a zero if the resulting minor version is under to (ie 411.7 instead of 411.70)
+                string result = input.Substring(input.LastIndexOf(ci.NumberFormat.CurrencyDecimalSeparator) + 1);
+                if (result.Length < 2)
+                {
+                    Console.WriteLine("Hmmm... Result is " + result);
+                    input += "0";
+                    Console.WriteLine("New version string is " + input);
+                }
+                float version = float.Parse(input ?? throw new ArgumentNullException(nameof(input)), NumberStyles.Currency, ci);
+
                 return version;
             }
             return 0.0f;
@@ -224,7 +233,7 @@ namespace PicoGAUpdate
             }
         }
 
-        private static void DownloadDriver(string url, float version)
+        private static void DownloadDriver(string url, string version)
         {
             string newFile;
             if (IsOutOfDate(version))
@@ -308,7 +317,7 @@ namespace PicoGAUpdate
             }
         }
 
-        private static void InstallDriver(string installerPath, float version)
+        private static void InstallDriver(string installerPath, string version)
         {
             string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
             try
@@ -448,7 +457,7 @@ namespace PicoGAUpdate
                 //                File.WriteAllText(@"C:\reddit.html", s);
                 //#endif
 
-                List<float> driverTitles = new List<float>();
+                List<string> driverTitles = new List<string>();
                 foreach (LinkItem i in LinkFinder.Find(s))
                 {
 #if DEBUG
@@ -466,7 +475,7 @@ namespace PicoGAUpdate
 #endif
                         if (version.Contains("."))
                         {
-                            driverTitles.Add(StringToFloat(version));
+                            driverTitles.Add(version);
                         }
                     }
                 }
@@ -482,7 +491,10 @@ namespace PicoGAUpdate
                     }
                     Console.WriteLine("^~~~ Latest");
 #endif
-                    float latestDriver = driverTitles.Last();
+                    string latestDriver = driverTitles.Last();
+                    // Fix parsed numbers not matching the driver name format
+                    //string tempver = latestDriver.ToString();
+                    //latestDriver = StringToFloat(tempver);
 #if !DEBUG
                     Console.WriteLine("Latest Driver: " + driverTitles.Last());
 #endif
@@ -492,7 +504,7 @@ namespace PicoGAUpdate
                     // http://us.download.nvidia.com/Windows/397.93/397.93-desktop-win10-64bit-international-whql.exe
                     string newUrl =
                         String.Format(
-                            "http://us.download.nvidia.com/Windows/{0}/{0}-desktop-win10-64bit-international-whql.exe",
+                            "http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-whql.exe",
                             latestDriver);
                     DownloadDriver(newUrl, latestDriver);
                 }
