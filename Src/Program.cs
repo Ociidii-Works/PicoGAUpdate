@@ -241,7 +241,7 @@ namespace PicoGAUpdate
                 // TODO: Figure what to do when downloading an older version
                 string versionS = version.ToString(CultureInfo.InvariantCulture);
                 newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-                if ((!OptionContainer.ForceDownload || OptionContainer.KeepDownloaded) && File.Exists(newFile))
+                if ((!OptionContainer.ForceDownload) && File.Exists(newFile))
                 {
                     //#if DEBUG
                     Console.WriteLine("Using Existing installer at " + newFile);
@@ -285,7 +285,7 @@ namespace PicoGAUpdate
                         InstallDriver(newFile, version);
                     }
 
-                    if (!OptionContainer.KeepDownloaded)
+                    if (OptionContainer.DeleteDownloaded)
                     {
                         try
                         {
@@ -442,7 +442,7 @@ namespace PicoGAUpdate
             }
             finally
             {
-                if (!OptionContainer.KeepDownloaded)
+                if (OptionContainer.DeleteDownloaded)
                 {
                     Safe.DirectoryDelete(extractPath);
                 }
@@ -530,7 +530,7 @@ namespace PicoGAUpdate
                     Console.WriteLine("Something went wrong; unable to parse driver list from webpage");
                 }
             }
- 
+
             if (OptionContainer.Clean)
             {
                 Cleanup();

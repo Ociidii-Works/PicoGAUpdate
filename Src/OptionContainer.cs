@@ -54,8 +54,8 @@ namespace PicoGAUpdate
         public static Option Silent = new Option("--silent", "-s", false,
             "Run the installer silently. This however does not modify the driver in any way.");
 
-        public static Option KeepDownloaded = new Option("--keep", "-k", false,
-            "Do not delete the downloaded driver before exiting the program.");
+        public static Option DeleteDownloaded = new Option("--keep", "-k", false,
+            "Delete the downloaded driver before exiting the program.");
 
         public static Option Strip = new Option("--strip", "-x", false,
         "Attempt to strip all components deemed useless by this tool's developer(s).");
