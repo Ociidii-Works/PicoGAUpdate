@@ -57,6 +57,9 @@ namespace PicoGAUpdate
         public static Option KeepDownloaded = new Option("--keep", "-k", false,
             "Do not delete the downloaded driver before exiting the program.");
 
+        public static Option Strip = new Option("--strip", "-x", false,
+        "Attempt to strip all components deemed useless by this tool's developer(s).");
+
         public static Option NoUpdate = new Option("--no-update", "-n", false,
             "Do not attempt to download and run a new driver package. Useful in combination with " + Clean.GetLongSwitch() +
             " or " + Strip.GetLongSwitch() + ".");
