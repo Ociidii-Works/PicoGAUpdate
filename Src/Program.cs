@@ -58,7 +58,7 @@ namespace PicoGAUpdate
 
         public static bool IsOutOfDate(string newVersion)
         {
-            if (OptionContainer.ForceDownload)
+            if (OptionContainer.ForceInstall)
             {
                 return true;
             }
@@ -241,7 +241,7 @@ namespace PicoGAUpdate
                 // TODO: Figure what to do when downloading an older version
                 string versionS = version.ToString(CultureInfo.InvariantCulture);
                 newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-                if ((!OptionContainer.ForceDownload) && File.Exists(newFile))
+                if (File.Exists(newFile) && !(OptionContainer.ForceDownload))
                 {
                     //#if DEBUG
                     Console.WriteLine("Using Existing installer at " + newFile);
