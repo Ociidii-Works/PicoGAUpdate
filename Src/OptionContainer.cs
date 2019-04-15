@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace PicoGAUpdate
@@ -39,36 +40,41 @@ namespace PicoGAUpdate
 
     public class OptionContainer
     {
-        public static Options Clean = new Options("--clean", "-c", false,
-            "Cleans the installer \"leftovers\" in \'Installer2\'.");
+        static List<Option> OptionsList = new List<Option>();
 
-        public static Options DownloadOnly = new Options("--download-only", "-d", false,
+        public static Option Clean = new Option("--clean", "-c", false,
+            "Cleans the installer \"leftovers\" in \'Installer2\'. Note: This will break the built-in uninstaller.");
+
+        public static Option DownloadOnly = new Option("--download-only", "-d", false,
             @"Do not run the downloaded driver. Useful with --keep.");
 
-        public static Options ForceDownload = new Options("--force", "-f", false,
-            "Downloads the latest or specified driver version even if up-to-date.");
+        public static Option ForceDownload = new Option("--force", "-f", false,
+            "Downloads and installs the latest or specified driver version even if up-to-date.");
 
-        public static Options Silent = new Options("--silent", "-s", false,
-            "Run the installer silently. This however installs everything.");
+        public static Option Silent = new Option("--silent", "-s", false,
+            "Run the installer silently. This however does not modify the driver in any way.");
 
-        public static Options KeepDownloaded = new Options("--keep", "-k", false,
+        public static Option KeepDownloaded = new Option("--keep", "-k", false,
             "Do not delete the downloaded driver before exiting the program.");
 
-        public static Options NoUpdate = new Options("--no-update", "-n", false,
+        public static Option NoUpdate = new Option("--no-update", "-n", false,
             "Do not attempt to download and run a new driver package. Useful in combination with " + Clean.GetLongSwitch() +
-            ".");
+            " or " + Strip.GetLongSwitch() + ".");
 
-        public class Options
+        public static Option Help = new Option("--help", "-h", false,
+            "This help text.");
+
+        public class Option
         {
             public override bool Equals(object obj)
             {
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
                 if (obj.GetType() != this.GetType()) return false;
-                return Equals((Options)obj);
+                return Equals((Option)obj);
             }
 
-            protected bool Equals(Options other)
+            protected bool Equals(Option other)
             {
                 return CurrentValue == other.CurrentValue;
             }
@@ -82,16 +88,17 @@ namespace PicoGAUpdate
             // ReSharper disable FieldCanBeMadeReadOnly.Global
             // ReSharper disable InconsistentNaming.Local
 
-            internal Options(string longSwitch, string shortSwitch = "", bool defaultValue = false, string helpText = "")
+            internal Option(string longSwitch, string shortSwitch = "", bool defaultValue = false, string helpText = "")
             {
                 DefaultValue = defaultValue;
                 CurrentValue = defaultValue;
                 LongSwitch = longSwitch;
                 ShortSwitch = shortSwitch;
                 HelpText = helpText;
+                OptionsList.Add(this);
             }
-
-            public Options()
+            
+            public Option()
             {
             }
 
@@ -101,23 +108,27 @@ namespace PicoGAUpdate
             private string ShortSwitch { get; set; }
             private string HelpText { get; set; }
 
-            public static implicit operator bool(Options foo)
+            public static implicit operator bool(Option foo)
             {
                 return !ReferenceEquals(foo, null) && foo.GetValue();
             }
+            public bool Is(Option other)
+            {
+                return this.LongSwitch.Equals(other.LongSwitch);
+            }
 
             // TODO: Make this the implicit getter thingy
-            public static bool operator ==(Options value1, bool valuebool)
+            public static bool operator ==(Option value1, bool valuebool)
             {
                 return value1.GetValue();
             }
 
-            public static bool operator !=(Options value1, bool valuebool)
+            public static bool operator !=(Option value1, bool valuebool)
             {
                 return !value1.GetValue();
             }
 
-            public static bool IsDefault(Options value1)
+            public static bool IsDefault(Option value1)
             {
                 return value1.GetValue() == value1.GetDefault();
             }
@@ -171,58 +182,35 @@ namespace PicoGAUpdate
 
             public static void PrintHelp()
             {
-                string helpParagraph = "Usage: " + String.Format("{0} [OPTION]...", System.Diagnostics.Process.GetCurrentProcess().ProcessName) + Environment.NewLine + Environment.NewLine + "Options:" + Environment.NewLine;
-                // ReSharper disable PossibleNullReferenceException
-                helpParagraph += Clean.GetPaddedHelpText();
-                helpParagraph += DownloadOnly.GetPaddedHelpText();
-                helpParagraph += ForceDownload.GetPaddedHelpText();
-                helpParagraph += Silent.GetPaddedHelpText();
-                helpParagraph += KeepDownloaded.GetPaddedHelpText();
-                helpParagraph += NoUpdate.GetPaddedHelpText();
-                Console.WriteLine(helpParagraph);
-                // ReSharper restore PossibleNullReferenceException
+                Console.WriteLine("Usage: " + String.Format("{0} [OPTION]...", System.Diagnostics.Process.GetCurrentProcess().ProcessName) + Environment.NewLine + Environment.NewLine + "Options:" + Environment.NewLine);
+                foreach (Option item in OptionsList)
+                {
+                    Console.WriteLine(item.GetPaddedHelpText());
+                }
             }
 
             public static void Parse(string[] args)
             {
+
                 if (args != null)
                 {
-                    var args_str = args.ToArray();
-                    if (args_str.Contains("--help") || args_str.Contains("-h") || args_str.Contains("/?"))
+                    foreach (var arg in args.ToArray())
                     {
-                        PrintHelp();
-                        Environment.Exit(2);
-                    }
-                    foreach (var variable in args)
-                    {
-                        if (variable == Clean.GetShortSwitch() || variable == Clean.GetLongSwitch())
+                        //Console.WriteLine("Processing switch " + arg);
+                        if (arg.Equals(OptionContainer.Help.GetShortSwitch()) || arg.Equals(OptionContainer.Help.GetLongSwitch()) || arg.Equals("/?"))
                         {
-                            Clean.SetValue(true);
+                            PrintHelp();
+                            Environment.Exit(2);
                         }
 
-                        if (variable == DownloadOnly.GetShortSwitch() || variable == DownloadOnly.GetLongSwitch())
+                        foreach (Option o in OptionsList)
                         {
-                            DownloadOnly.SetValue(true);
-                        }
-
-                        if (variable == ForceDownload.GetShortSwitch() || variable == ForceDownload.GetLongSwitch())
-                        {
-                            ForceDownload.SetValue(true);
-                        }
-
-                        if (variable == Silent.GetShortSwitch() || variable == Silent.GetLongSwitch())
-                        {
-                            Silent.SetValue(true);
-                        }
-
-                        if (variable == KeepDownloaded.GetShortSwitch() || variable == KeepDownloaded.GetLongSwitch())
-                        {
-                            KeepDownloaded.SetValue(true);
-                        }
-
-                        if (variable == NoUpdate.GetShortSwitch() || variable == NoUpdate.GetLongSwitch())
-                        {
-                            NoUpdate.SetValue(true);
+                            //Console.WriteLine("Looking for " + o.LongSwitch + "...");
+                            if (o.LongSwitch.Equals(arg) || o.ShortSwitch.Equals(arg))
+                            {
+                                //Console.WriteLine("Found " + arg);
+                                o.SetValue(true);
+                            }
                         }
                     }
                 }
