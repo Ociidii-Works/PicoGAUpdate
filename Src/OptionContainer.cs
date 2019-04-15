@@ -48,11 +48,14 @@ namespace PicoGAUpdate
         public static Option DownloadOnly = new Option("--download-only", "-d", false,
             @"Do not run the downloaded driver. Useful with --keep.");
 
-        public static Option ForceDownload = new Option("--force", "-f", false,
-            "Downloads and installs the latest or specified driver version even if up-to-date.");
+        public static Option ForceDownload = new Option("--download", "-d", false,
+            "Force Download of the latest or specified driver version even if present/up to date");
+
+        public static Option ForceInstall = new Option("--install", "-f", false,
+            "Force installation of the latest driver version even if up-to-date.");
 
         public static Option Silent = new Option("--silent", "-s", false,
-            "Run the installer silently. This however does not modify the driver in any way.");
+            "Run the installer silently.");
 
         public static Option DeleteDownloaded = new Option("--keep", "-k", false,
             "Delete the downloaded driver before exiting the program.");
@@ -197,26 +200,37 @@ namespace PicoGAUpdate
 
                 if (args != null)
                 {
-                    foreach (var arg in args.ToArray())
-                    {
-                        //Console.WriteLine("Processing switch " + arg);
-                        if (arg.Equals(OptionContainer.Help.GetShortSwitch()) || arg.Equals(OptionContainer.Help.GetLongSwitch()) || arg.Equals("/?"))
-                        {
-                            PrintHelp();
-                            Environment.Exit(2);
-                        }
 
-                        foreach (Option o in OptionsList)
+                    if (args.Length > 0)
+                    {
+                        foreach (var arg in args.ToArray())
                         {
-                            //Console.WriteLine("Looking for " + o.LongSwitch + "...");
-                            if (o.LongSwitch.Equals(arg) || o.ShortSwitch.Equals(arg))
+                            //Console.WriteLine("Processing switch " + arg);
+                            if (arg.Equals(OptionContainer.Help.GetShortSwitch()) || arg.Equals(OptionContainer.Help.GetLongSwitch()) || arg.Equals("/?"))
                             {
-                                //Console.WriteLine("Found " + arg);
-                                o.SetValue(true);
+                                PrintHelp();
+                                Environment.Exit(2);
+                            }
+
+                            foreach (Option o in OptionsList)
+                            {
+                                //Console.WriteLine("Looking for " + o.LongSwitch + "...");
+                                if (o.LongSwitch.Equals(arg) || o.ShortSwitch.Equals(arg))
+                                {
+                                    //Console.WriteLine("Found " + arg);
+                                    o.SetValue(true);
+                                }
                             }
                         }
                     }
+                    else
+                    {
+                        Console.WriteLine("No arguments given, using defaults");
+                        OptionContainer.Strip.SetValue(true);
+                        OptionContainer.Silent.SetValue(true);
+                    }
                 }
+                
             }
         }
     }
