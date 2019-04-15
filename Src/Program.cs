@@ -233,72 +233,48 @@ namespace PicoGAUpdate
             }
         }
 
-        private static void DownloadDriver(string url, string version)
+        private static bool DownloadDriver(string url, string version, out string downloadedFile)
         {
-            string newFile;
-            if (IsOutOfDate(version))
+            string newFile = "";
+            bool dirty = false;
+            // TODO: Figure what to do when downloading an older version
+            string versionS = version.ToString(CultureInfo.InvariantCulture);
+            newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
+            if (File.Exists(newFile) && !(OptionContainer.ForceDownload))
             {
-                // TODO: Figure what to do when downloading an older version
-                string versionS = version.ToString(CultureInfo.InvariantCulture);
-                newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-                if (File.Exists(newFile) && !(OptionContainer.ForceDownload))
-                {
-                    //#if DEBUG
-                    Console.WriteLine("Using Existing installer at " + newFile);
-                    //#endif
-                    DownloadDone = true;
-                    NewDownloader.Success = true;
-                }
-                else
-                {
-                    // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe
-                    // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
-                    Console.WriteLine("Downloading Driver version " + version
+                //#if DEBUG
+                Console.WriteLine("Using Existing installer at " + newFile);
+                //#endif
+                DownloadDone = true;
+                NewDownloader.Success = true;
+            }
+            else
+            {
+                // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe
+                // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
+                Console.WriteLine("Downloading Driver version " + version
 #if DEBUG
                     + " from " + url + Environment.NewLine + "to " + newFile
 #endif
                      + "...");
-                    Task.Run(() => new NewDownloader().Download(url, newFile));
-                    while (!DownloadDone)
-                    {
-                        // wait
-                    }
-                    if (NewDownloader.Success)
-                    {
-                        if (File.Exists(newFile))
-                        {
-                            Console.WriteLine("Deleting " + newFile);
-                            File.Delete(newFile);
-                        }
-                        NewDownloader.RenameDownload(newFile);
-                    }
-                }
-                if (!string.IsNullOrEmpty(newFile) && File.Exists(newFile))
+                Task.Run(() => new NewDownloader().Download(url, newFile));
+                while (!DownloadDone)
                 {
-                    if (OptionContainer.NoUpdate)
+                    // wait
+                }
+                if (NewDownloader.Success)
+                {
+                    if (File.Exists(newFile))
                     {
-                        Console.WriteLine("Uh-oh. we shouldn't be here!");
+                        Console.WriteLine("Deleting old copy");
+                        File.Delete(newFile);
                     }
-
-                    if (!OptionContainer.DownloadOnly)
-                    {
-                        InstallDriver(newFile, version);
-                    }
-
-                    if (OptionContainer.DeleteDownloaded)
-                    {
-                        try
-                        {
-                            File.Delete(newFile);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                            //throw;
-                        }
-                    }
+                    NewDownloader.RenameDownload(newFile);
+                    dirty = true;
                 }
             }
+            downloadedFile = newFile;
+            return dirty;
         }
 
         public static void CopyAll(DirectoryInfo source, DirectoryInfo target)
@@ -323,8 +299,13 @@ namespace PicoGAUpdate
             }
         }
 
-        private static void InstallDriver(string installerPath, string version)
+        public static bool InstallDriver(string installerPath, string version)
         {
+            bool dirty = false;
+            if (string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath))
+            {
+                return false;
+            }
             string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
             try
             {
@@ -445,10 +426,13 @@ namespace PicoGAUpdate
                 if (OptionContainer.DeleteDownloaded)
                 {
                     Safe.DirectoryDelete(extractPath);
+                    File.Delete(installerPath);
                 }
+                dirty = true;
             }
 
             ExitImmediately = true;
+            return dirty;
         }
 
         private static void Main(string[] args)
@@ -465,8 +449,10 @@ namespace PicoGAUpdate
             Console.WriteLine("Elevated Process : " + CheckAdmin.IsElevated);
 #endif
 
+            bool dirty = true;
             if (!OptionContainer.NoUpdate)
             {
+                // FIXME: This shouldn't run unless we have to...
                 Console.WriteLine("Finding latest Nvidia Driver Version...");
                 WebClient w = new WebClient();
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
@@ -519,11 +505,28 @@ namespace PicoGAUpdate
                     // Build new URL from latest version
                     // Note: '388.00' becomes '388' somewhere above, need to add '.00' at the end if trying to use that one.
                     // http://us.download.nvidia.com/Windows/397.93/397.93-desktop-win10-64bit-international-whql.exe
-                    string newUrl =
-                        String.Format(
-                            "http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-whql.exe",
-                            latestDriver);
-                    DownloadDriver(newUrl, latestDriver);
+                    string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-whql.exe", latestDriver);
+                    string downloadedFile = "";
+                    bool needsDownload = IsOutOfDate(latestDriver);
+                    if (needsDownload)
+                    {
+                        dirty = DownloadDriver(DownloadURL, latestDriver, out downloadedFile);
+                    }
+                    if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
+                    {
+                        dirty = InstallDriver(downloadedFile, latestDriver);
+                    }
+                    if (OptionContainer.DeleteDownloaded)
+                    {
+                        try
+                        {
+                            File.Delete(downloadedFile);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
+                    }
                 }
                 else
                 {
@@ -531,7 +534,7 @@ namespace PicoGAUpdate
                 }
             }
 
-            if (OptionContainer.Strip)
+            if (dirty && OptionContainer.Strip)
             {
                 Stripper.StripComponentsViaUninstall();
             }
@@ -539,8 +542,6 @@ namespace PicoGAUpdate
             {
                 Cleanup();
             }
-
-            Console.WriteLine("Updater is done here.");
 
             if (!ExitImmediately)
             {
