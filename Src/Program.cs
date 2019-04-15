@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 namespace PicoGAUpdate
 
 {
-    internal static class Program
+    static partial class Program
     {
         private static string CollapseSpaces(string value)
         {
@@ -253,7 +253,11 @@ namespace PicoGAUpdate
                 {
                     // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe
                     // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
-                    Console.WriteLine("Downloading Driver version " + version + " from " + url + Environment.NewLine + "to " + newFile + "...");
+                    Console.WriteLine("Downloading Driver version " + version
+#if DEBUG
+                    + " from " + url + Environment.NewLine + "to " + newFile
+#endif
+                     + "...");
                     Task.Run(() => new NewDownloader().Download(url, newFile));
                     while (!DownloadDone)
                     {
@@ -304,7 +308,9 @@ namespace PicoGAUpdate
             // Copy each file into the new directory.
             foreach (FileInfo fi in source.GetFiles())
             {
+#if DEBUG
                 Console.WriteLine(@"Copying {0}\{1}", target.FullName, fi.Name);
+#endif
                 fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
             }
 
@@ -323,7 +329,6 @@ namespace PicoGAUpdate
             try
             {
                 // Find WinRar
-                bool legacySilent = true;
                 string winRar = "";
                 // 64-bit Winrar on 64-bit architecture
                 string winRar6432P = Environment.GetEnvironmentVariable("ProgramW6432") +
@@ -372,40 +377,44 @@ namespace PicoGAUpdate
                     wProcess.StartInfo.Arguments));
 #endif
                     // Try to create the full path just in case...
-                    Directory.CreateDirectory(@"C:\NVIDIA");
-                    Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
+                    //Directory.CreateDirectory(@"C:\NVIDIA");
+                    //Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
                     wProcess.Start();
                     wProcess.WaitForExit();
                     // Move to C:\NVIDIA (where the installer expects it) and remove Win10_64\International\ hierarchy levels
-                    string newDir = @"C:\NVIDIA\DisplayDriver\" + version.ToString();
-                    if (Directory.Exists(newDir))
-                    {
-                        Console.WriteLine("Deleting " + newDir);
-                        Safe.DirectoryDelete(newDir, false);
-                    }
-                    Directory.CreateDirectory(newDir);
-                    Console.WriteLine("Copying " + extractPath + " => " + newDir);
-                    System.IO.DirectoryInfo dirsrc = new System.IO.DirectoryInfo(extractPath);
-                    System.IO.DirectoryInfo dirtarget = new System.IO.DirectoryInfo(newDir);
-                    CopyAll(dirsrc, dirtarget);
-                    // NOOO!! See below; Cannot delete this.
-                    //extractPath = newDir;
-                    installerPath = newDir + @"\setup.exe";
-                    Console.Write("Done.");
+                    // string newDir = @"C:\NVIDIA\DisplayDriver\" + version.ToString();
+                    // if (Directory.Exists(newDir))
+                    // {
+                    //     Console.WriteLine("Deleting " + newDir);
+                    //     Safe.DirectoryDelete(newDir, false);
+                    // }
+                    // Directory.CreateDirectory(newDir);
+                    // Console.WriteLine("Copying " + extractPath + " => " + newDir);
+                    // System.IO.DirectoryInfo dirsrc = new System.IO.DirectoryInfo(extractPath);
+                    // System.IO.DirectoryInfo dirtarget = new System.IO.DirectoryInfo(newDir);
+                    // CopyAll(dirsrc, dirtarget);
+                    // // NOOO!! See below; Cannot delete this.
+                    // //extractPath = newDir;
+                    // installerPath = newDir + @"\setup.exe";
+                    
+                    Console.WriteLine("Done.");
 
                     // Hack up the installer a little to remove unwanted "features" such as Telemetry
                     //if(GOptions.Contains("strip"))
+                    if(Directory.Exists(extractPath + @"\NvTelemetry"))
                     {
-                        Safe.DirectoryDelete(newDir + @"\NvTelemetry");
+                        Safe.DirectoryDelete(extractPath + @"\NvTelemetry", false);
+                        Console.WriteLine("Removed NvTelemetry.");
                     }
                 }
                 else
                 {
-                    Console.WriteLine("Cannot extract installer data; falling back to silent default install!");
+                    Console.WriteLine("Driver modification requires WinRAR. Please install in the default location.");
+                    Environment.Exit(1);
                 }
-
+                string setupPath = extractPath + @"\setup.exe";
                 Process p = new Process();
-                p.StartInfo.FileName = installerPath ?? throw new ArgumentNullException(nameof(installerPath));
+                p.StartInfo.FileName = setupPath ?? throw new ArgumentNullException(nameof(setupPath));
                 if (OptionContainer.Silent)
                 {
                     Console.WriteLine("Running Installer silently... Your monitor(s) may flicker several times...");
@@ -413,12 +422,17 @@ namespace PicoGAUpdate
                 }
                 else
                 {
-                    Console.WriteLine("Running GUI Installer from " + p.StartInfo.FileName + "...");
+                    Console.WriteLine("Running GUI Installer"
+#if DEBUB
+                        + " from " + p.StartInfo.FileName
+#endif
+                        + "...");
                 }
 
                 p.Start();
                 p.WaitForExit();
                 Console.WriteLine("Driver installed.");
+                //Cleanup();
             }
             catch (Exception ex)
             {
@@ -437,17 +451,18 @@ namespace PicoGAUpdate
 
         private static void Main(string[] args)
         {
-            OptionContainer.Options.Parse(args);
+            OptionContainer.Option.Parse(args);
 #if !DEBUG
-            Console.Clear();
-            int H = 15;
-            int W = 80;
-            Console.SetWindowSize(W, H);
-            Console.SetBufferSize(W, H);
+            //Console.Clear();
+            //int H = 15;
+            //int W = 80;
+            //Console.SetWindowSize(W, H);
+            //Console.SetBufferSize(W, H);
 #endif
 #if DEBUG
             Console.WriteLine("Elevated Process : " + CheckAdmin.IsElevated);
 #endif
+
             if (!OptionContainer.NoUpdate)
             {
                 Console.WriteLine("Finding latest Nvidia Driver Version...");
@@ -513,7 +528,7 @@ namespace PicoGAUpdate
                     Console.WriteLine("Something went wrong; unable to parse driver list from webpage");
                 }
             }
-
+ 
             if (OptionContainer.Clean)
             {
                 Cleanup();
