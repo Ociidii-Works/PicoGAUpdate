@@ -531,6 +531,10 @@ namespace PicoGAUpdate
                 }
             }
 
+            if (OptionContainer.Strip)
+            {
+                Stripper.StripComponentsViaUninstall();
+            }
             if (OptionContainer.Clean)
             {
                 Cleanup();

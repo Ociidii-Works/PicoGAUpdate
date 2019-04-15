@@ -21,7 +21,8 @@ namespace PicoGAUpdate
                     string rundll32 = @"C:\Windows\SysWOW64\rundll32.exe";
                     string NVUnst = @"C:\Program Files\NVIDIA Corporation\Installer2\InstallerCore\NVI2.DLL";
                     string cmd = "UninstallPackage";
-                    string audioDriver = "HDAudio.Driver"; // Audio Driver
+                    //string audioDriver = "HDAudio.Driver"; // Audio Driver
+                    string GFE = "Display.GFExperience"; // GeForce Experience
                     Console.WriteLine(NVUnst);
                     if (File.Exists(NVUnst))
                     {
@@ -32,7 +33,7 @@ namespace PicoGAUpdate
                             FileName = rundll32,
                             UseShellExecute = true,
                             CreateNoWindow = false,
-                            Arguments = String.Format("\"{0}\",{1} {2}",NVUnst,cmd,audioDriver)
+                            Arguments = String.Format("\"{0}\",{1} {2} -silent",NVUnst,cmd,GFE)
                         }
                         };
                         Console.WriteLine("Starting " + NVU.StartInfo.FileName + " " + NVU.StartInfo.Arguments);
