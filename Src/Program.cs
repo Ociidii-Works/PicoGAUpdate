@@ -62,7 +62,7 @@ namespace PicoGAUpdate
             {
                 return true;
             }
-            Console.WriteLine("Determining driver version...");
+            Console.Write("Determining driver version... ");
             // Add fallback value required for math, if driver is missing/not detected.
             string currVer = "000.00";
             //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
@@ -83,7 +83,7 @@ namespace PicoGAUpdate
                         string[] version = obj["DriverVersion"].ToString().Split('.');
                         {
                             string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-                            Console.WriteLine("Current Driver Version: " + nvidiaVersion);
+                            Console.WriteLine(nvidiaVersion);
                             currVer = nvidiaVersion;
                         }
                     }
@@ -453,7 +453,7 @@ namespace PicoGAUpdate
             if (!OptionContainer.NoUpdate)
             {
                 // FIXME: This shouldn't run unless we have to...
-                Console.WriteLine("Finding latest Nvidia Driver Version...");
+                Console.Write("Finding latest Nvidia Driver Version... ");
                 WebClient w = new WebClient();
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
                 //#if DEBUG
@@ -499,7 +499,7 @@ namespace PicoGAUpdate
                     //string tempver = latestDriver.ToString();
                     //latestDriver = StringToFloat(tempver);
 #if !DEBUG
-                    Console.WriteLine("Latest Driver: " + driverTitles.Last());
+                    Console.WriteLine(driverTitles.Last());
 #endif
 
                     // Build new URL from latest version
