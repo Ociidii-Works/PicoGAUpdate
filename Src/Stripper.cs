@@ -22,6 +22,8 @@ namespace PicoGAUpdate
                     string cmd = "UninstallPackage";
                     //string audioDriver = "HDAudio.Driver"; // Audio Driver
                     string GFE = "Display.GFExperience"; // GeForce Experience
+                    //string extraSwitches = "-silent"; // this don't work anymore.
+                    string extraSwitches = "";
                     Console.WriteLine(NVUnst);
                     if (File.Exists(NVUnst))
                     {
@@ -32,7 +34,7 @@ namespace PicoGAUpdate
                             FileName = rundll32,
                             UseShellExecute = true,
                             CreateNoWindow = false,
-                            Arguments = String.Format("\"{0}\",{1} {2} -silent",NVUnst,cmd,GFE)
+                            Arguments = String.Format("\"{0}\",{1} {2} {3}",NVUnst,cmd,GFE, extraSwitches)
                         }
                         };
                         Console.WriteLine("Starting " + NVU.StartInfo.FileName + " " + NVU.StartInfo.Arguments);
