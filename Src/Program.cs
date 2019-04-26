@@ -440,6 +440,7 @@ namespace PicoGAUpdate
             // TODO: Implement system tray icon similarly to https://social.msdn.microsoft.com/Forums/en-US/a7128bdc-783a-4dcc-9de1-652af625627b/console-app-wnotifyicon?forum=netfxcompact
             // An alternative approach is to use https://stackoverflow.com/questions/38062177/is-it-possible-to-send-toast-notification-from-console-application
             // to have the ability to send a balloon tip
+            MainProgramLoop(args);
         }
         private static void MainProgramLoop(string[] args)
         {
