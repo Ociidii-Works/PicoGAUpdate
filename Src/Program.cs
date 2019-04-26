@@ -470,7 +470,7 @@ namespace PicoGAUpdate
                 foreach (LinkItem i in LinkFinder.Find(s))
                 {
 #if DEBUG
-                    //Console.WriteLine(i.ToString());
+                    Console.WriteLine(i.ToString());
 #endif
                     string iS = i.Text;
                     {
@@ -494,7 +494,7 @@ namespace PicoGAUpdate
                     driverTitles.Sort();
 #if DEBUG
                     Console.WriteLine("Available Versions:");
-                    foreach (float driverVersion in driverTitles)
+                    foreach (var driverVersion in driverTitles)
                     {
                         Console.WriteLine(driverVersion.ToString(CultureInfo.InvariantCulture));
                     }
@@ -504,9 +504,9 @@ namespace PicoGAUpdate
                     // Fix parsed numbers not matching the driver name format
                     //string tempver = latestDriver.ToString();
                     //latestDriver = StringToFloat(tempver);
-#if !DEBUG
+//#if !DEBUG
                     Console.WriteLine(driverTitles.Last());
-#endif
+//#endif
 
                     // Build new URL from latest version
                     // Note: '388.00' becomes '388' somewhere above, need to add '.00' at the end if trying to use that one.
