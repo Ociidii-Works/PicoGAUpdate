@@ -513,7 +513,7 @@ namespace PicoGAUpdate
                     // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
                     // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-nsd-whql.exe <= Studio Driver
                     // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-whql.exe <= GameReady Driver
-                    string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, OptionContainer.Studio ? "-nds":"");
+                    string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, OptionContainer.Studio ? "nsd-":"");
                     string downloadedFile = "";
                     bool needsDownload = IsOutOfDate(latestDriver);
                     if (needsDownload)
