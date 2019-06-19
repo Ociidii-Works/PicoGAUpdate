@@ -60,6 +60,9 @@ namespace PicoGAUpdate
         public static Option DeleteDownloaded = new Option("--keep", "-k", false,
             "Delete the downloaded driver before exiting the program.");
 
+        public static Option Studio = new Option("--studio", "-S", false,
+           "Use the NVIDIA Studio driver where available. Uses the GameReady driver otherwise.");
+
         public static Option Strip = new Option("--strip", "-x", false,
         "Attempt to strip all components deemed useless by this tool's developer(s).");
 

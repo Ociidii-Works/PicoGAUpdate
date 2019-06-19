@@ -54,7 +54,8 @@ namespace PicoGAUpdate
                         RegexOptions.Singleline);
                     if (m3.Success)
                     {
-                        Match m4 = Regex.Match(i.Href, "r/nvidia/comments/(.*)/driver_(.*?)_faq(discussion_thread)?", RegexOptions.Singleline);
+                        
+                        Match m4 = Regex.Match(i.Href, "r/nvidia/comments/(.*)/(|game_ready_)(|studio_)driver_(.*?)_faq(discussion_thread)?", RegexOptions.Singleline);
                         if (m4.Success)
                         {
 #if DEBUG
@@ -72,6 +73,7 @@ namespace PicoGAUpdate
                             {
                                 continue;
                             }
+                            // TODO: use "latest driver" when available: "found: 'latest driver faq/discussion thread'"
 #if DEBUG
                             Console.WriteLine("Found '" + t + "'");
 #endif
@@ -80,15 +82,37 @@ namespace PicoGAUpdate
                             //if (t.Contains("Driver") && (t.Contains("Hotfix") || (t.Contains("FAQ/Discussion") && !t.Contains("Latest"))))
                             if (t.Contains("driver "))
                             {
+                                // TODO: cut off at first number instead
                                 t = t.Replace(" faq/discussion", "");
+#if DEBUG
+                                Console.WriteLine("String Trim=> '" + t + "'");
+#endif
                                 t = t.Replace(" thread", "");
+#if DEBUG
+                                Console.WriteLine("String Trim=> '" + t + "'");
+#endif
                                 t = t.Replace("driver ", "");
+#if DEBUG
+                                Console.WriteLine("String Trim=> '" + t + "'");
+#endif
+                                t = t.Replace("&amp; ", "");
+#if DEBUG
+                                Console.WriteLine("String Trim=> '" + t + "'");
+#endif
+                                t = t.Replace("studio ", "");
+#if DEBUG
+                                Console.WriteLine("String Trim=> '" + t + "'");
+#endif
+                                t = t.Replace("game ready", "");
 
+                                i.Href = i.Href.Trim();
+                                
+                                // Sometimes Trim fails
+                                t = t.Replace(" ", "");
+                                i.Text = t;
 #if DEBUG
                                 Console.WriteLine("Found Thread =>'" + t + "'");
 #endif
-                                i.Href = i.Href.Trim();
-                                i.Text = t;
 #if DEBUG
                                 Console.WriteLine("Adding '" + t + "' (" + i.Href + ")");
 #endif

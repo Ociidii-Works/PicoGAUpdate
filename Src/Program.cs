@@ -250,8 +250,6 @@ namespace PicoGAUpdate
             }
             else
             {
-                // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe
-                // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
                 Console.WriteLine("Downloading Driver version " + version
 #if DEBUG
                     + " from " + url + Environment.NewLine + "to " + newFile
@@ -507,12 +505,15 @@ namespace PicoGAUpdate
                     //latestDriver = StringToFloat(tempver);
 //#if !DEBUG
                     Console.WriteLine(driverTitles.Last());
-//#endif
+                    //#endif
 
                     // Build new URL from latest version
                     // Note: '388.00' becomes '388' somewhere above, need to add '.00' at the end if trying to use that one.
-                    // http://us.download.nvidia.com/Windows/397.93/397.93-desktop-win10-64bit-international-whql.exe
-                    string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-whql.exe", latestDriver);
+                    // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe <= Valid
+                    // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
+                    // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-nsd-whql.exe <= Studio Driver
+                    // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-whql.exe <= GameReady Driver
+                    string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, OptionContainer.Studio ? "-nds":"");
                     string downloadedFile = "";
                     bool needsDownload = IsOutOfDate(latestDriver);
                     if (needsDownload)
