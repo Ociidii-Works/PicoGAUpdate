@@ -55,7 +55,7 @@ namespace PicoGAUpdate
                     if (m3.Success)
                     {
                         
-                        Match m4 = Regex.Match(i.Href, "r/nvidia/comments/(.*)/(|game_ready_)(|studio_)driver_(.*?)_faq(discussion_thread)?", RegexOptions.Singleline);
+                        Match m4 = Regex.Match(i.Href, "r/nvidia/comments/(.*)/(|game_ready_)(|studio_)(|driver_)(.*?)_faq(discussion_thread)?", RegexOptions.Singleline);
                         if (m4.Success)
                         {
 #if DEBUG
