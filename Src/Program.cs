@@ -375,7 +375,7 @@ namespace PicoGAUpdate
                     // // NOOO!! See below; Cannot delete this.
                     // //extractPath = newDir;
                     // installerPath = newDir + @"\setup.exe";
-                    
+
                     Console.WriteLine("Done.");
 
                     // Hack up the installer a little to remove unwanted "features" such as Telemetry
@@ -465,103 +465,114 @@ namespace PicoGAUpdate
                 //                File.WriteAllText(@"C:\reddit.html", s);
                 //#endif
 
-                List<string> driverTitles = new List<string>();
-                foreach (LinkItem i in LinkFinder.Find(s))
+                //                List<string> driverTitles = new List<string>();
+                // Populate list of links
+                List<LinkItem> list = new List<LinkItem>();
+                list = LinkFinder.Find(s);
+                LinkItem latestDriver = list.Last<LinkItem>();
+                foreach (LinkItem i in list)
                 {
-#if DEBUG
-                    Console.WriteLine(i.ToString());
-#endif
-                    string iS = i.Text;
-                    {
-#if DEBUG
-                        Console.WriteLine("iS = '" + iS + "'");
-#endif
-                        string[] prefix = i.Text.Split(new string[] { "FAQ" }, StringSplitOptions.None);
-                        string version = prefix.First().Split(new string[] { "Driver " }, StringSplitOptions.None).Last();
-#if DEBUG
-                        Console.WriteLine(version);
-#endif
-                        if (version.Contains("."))
-                        {
-                            driverTitles.Add(version);
-                        }
-                    }
-                }
+                    //#if DEBUG
+                    //                    Console.WriteLine(i.ToString());
+                    //#endif
+                    //                    string iS = i.Version;
+                    //                    {
+                    //#if DEBUG
+                    //                        Console.WriteLine("iS = '" + iS + "'");
+                    //#endif
+                    //                        string[] prefix = i.Version.Split(new string[] { "FAQ" }, StringSplitOptions.None);
+                    //                        string version = prefix.First().Split(new string[] { "Driver " }, StringSplitOptions.None).Last();
+                    //#if DEBUG
+                    //                        Console.WriteLine(version);
+                    //#endif
+                    //                        if (version.Contains("."))
+                    //                        {
+                    //                            driverTitles.Add(version);
+                    //                        }
+                    //                    }
+                    //                }
 
-                if (driverTitles.Any())
-                {
-                    driverTitles.Sort();
-#if DEBUG
-                    Console.WriteLine("Available Versions:");
-                    foreach (var driverVersion in driverTitles)
-                    {
-                        Console.WriteLine(driverVersion.ToString(CultureInfo.InvariantCulture));
-                    }
-                    Console.WriteLine("^~~~ Latest");
-#endif
-                    string latestDriver = driverTitles.Last();
+                    //                if (driverTitles.Any())
+                    //                {
+                    //                    driverTitles.Sort();
+                    //#if DEBUG
+                    //                    Console.WriteLine("Available Versions:");
+                    //                    foreach (var driverVersion in driverTitles)
+                    //                    {
+                    //                        Console.WriteLine(driverVersion.ToString(CultureInfo.InvariantCulture));
+                    //                    }
+                    //                    Console.WriteLine("^~~~ Latest");
+                    //#endif
+                    Console.WriteLine(i.Version + " (" + (i.studio ? "Studio" : "GameReady") + ")");
+                    //string latestDriver = driverTitles.Last();
                     // Fix parsed numbers not matching the driver name format
                     //string tempver = latestDriver.ToString();
                     //latestDriver = StringToFloat(tempver);
-//#if !DEBUG
-                    Console.WriteLine(driverTitles.Last());
-                    //#endif
-
-                    // Build new URL from latest version
-                    // Note: '388.00' becomes '388' somewhere above, need to add '.00' at the end if trying to use that one.
-                    // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe <= Valid
-                    // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
-                    // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-nsd-whql.exe <= Studio Driver
-                    // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-whql.exe <= GameReady Driver
-                    string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, OptionContainer.Studio ? "nsd-":"");
-                    string downloadedFile = "";
-                    bool needsDownload = IsOutOfDate(latestDriver);
-                    if (needsDownload)
+                    //#if !DEBUG
+                    //Console.WriteLine(driverTitles.Last());
+                    // TODO: Implement specific version downloading here.
+                    if (i.Version == latestDriver.Version)
                     {
-                        dirty = DownloadDriver(DownloadURL, latestDriver, out downloadedFile);
+                        Console.WriteLine("^~~~ Latest");
                     }
-                    if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
-                    {
-                        dirty = InstallDriver(downloadedFile, latestDriver);
-                    }
-                    else
-                    {
-                        // show baloon tip
-                        // Program.sTrayIcon.ShowBalloonTi
-                    }
-                    if (OptionContainer.DeleteDownloaded)
-                    {
-                        try
-                        {
-                            File.Delete(downloadedFile);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                        }
-                    }
+                }
+                //#endif
+                //#if TEMP
+                // Build new URL from latest version
+                // Note: '388.00' becomes '388' somewhere above, need to add '.00' at the end if trying to use that one.
+                // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe <= Valid
+                // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
+                // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-nsd-whql.exe <= Studio Driver
+                // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-whql.exe <= GameReady Driver
+                //string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, i.studio ? "nsd-":"");
+                //string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, i.studio ? "nsd-":"");
+                string downloadedFile = "";
+                bool needsDownload = IsOutOfDate(latestDriver.Version);
+                if (needsDownload)
+                {
+                    dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, out downloadedFile);
+                }
+                if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
+                {
+                    dirty = InstallDriver(downloadedFile, latestDriver.Version);
                 }
                 else
                 {
-                    Console.WriteLine("Something went wrong; unable to parse driver list from webpage");
+                    // show baloon tip
+                    // Program.sTrayIcon.ShowBalloonTi
                 }
-            }
+                if (OptionContainer.DeleteDownloaded)
+                {
+                    try
+                    {
+                        File.Delete(downloadedFile);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e);
+                    }
+                }
+                //                }
+                //                    else
+                //                    {
+                //                    Console.WriteLine("Something went wrong; unable to parse driver list from webpage");
+                //                }
+                if (dirty && OptionContainer.Strip)
+                {
+                    Stripper.StripComponentsViaUninstall();
+                }
+                if (OptionContainer.Clean)
+                {
+                    Cleanup();
+                }
 
-            if (dirty && OptionContainer.Strip)
-            {
-                Stripper.StripComponentsViaUninstall();
-            }
-            if (OptionContainer.Clean)
-            {
-                Cleanup();
-            }
-
-            if (!ExitImmediately)
-            {
-                Console.WriteLine();
-                Console.Out.Flush();
-                Console.WriteLine("Press any key to exit...");
-                Console.ReadKey();
+                if (!ExitImmediately)
+                {
+                    Console.WriteLine();
+                    Console.Out.Flush();
+                    Console.WriteLine("Press any key to exit...");
+                    Console.ReadKey();
+                }
             }
         }
     }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace PicoGAUpdate
@@ -7,11 +8,13 @@ namespace PicoGAUpdate
     public struct LinkItem
     {
         public string Href;
-        public string Text;
+        public string Version;
+        public bool studio;
+        public string dlurl;
 
         public override string ToString()
         {
-            return Href + "\n\t" + Text;
+            return Href + "\n\t" + Version;
         }
     }
 
@@ -58,13 +61,14 @@ namespace PicoGAUpdate
                         Match m4 = Regex.Match(i.Href, "r/nvidia/comments/(.*)/(|game_ready_)(|studio_)(|driver_)(.*?)_faq(discussion_thread)?", RegexOptions.Singleline);
                         if (m4.Success)
                         {
-#if DEBUG
-                            Console.WriteLine("LINK!!!!!! \n\n" + i.Href + "\n\n");
-#endif
+//#if DEBUG
+//                            Console.WriteLine("LINK!!!!!! \n\n" + i.Href + "\n\n");
+//#endif
                             // 4.
                             // Remove inner tags from text.
-                            string t = Regex.Replace(value, @"\s*<.*?>\s*", "",
-                            RegexOptions.Singleline).ToLowerInvariant();
+                            string t = Regex.Replace(value, @"\s*<.*?>\s*", "", RegexOptions.Singleline).ToLowerInvariant();
+                            t.Replace(Environment.NewLine,"");
+                            t.Replace("\t","");
                             if (t == "")
                             {
                                 continue;
@@ -84,39 +88,58 @@ namespace PicoGAUpdate
                             {
                                 // TODO: cut off at first number instead
                                 t = t.Replace(" faq/discussion", "");
-#if DEBUG
-                                Console.WriteLine("String Trim=> '" + t + "'");
-#endif
+                                if(t.StartsWith("discussion"))
+                                {
+                                    continue;
+                                }
+//#if DEBUG
+//                                Console.WriteLine("String Trim=> '" + t + "'");
+//#endif
                                 t = t.Replace(" thread", "");
-#if DEBUG
-                                Console.WriteLine("String Trim=> '" + t + "'");
-#endif
+//#if DEBUG
+//                                Console.WriteLine("String Trim=> '" + t + "'");
+//#endif
                                 t = t.Replace("driver ", "");
-#if DEBUG
-                                Console.WriteLine("String Trim=> '" + t + "'");
-#endif
+//#if DEBUG
+//                                Console.WriteLine("String Trim=> '" + t + "'");
+//#endif
                                 t = t.Replace("&amp; ", "");
-#if DEBUG
-                                Console.WriteLine("String Trim=> '" + t + "'");
-#endif
+//#if DEBUG
+//                                Console.WriteLine("String Trim=> '" + t + "'");
+//#endif
+                                if (t.Contains("studio"))
+                                {
+                                    i.studio = true;
+                                }
                                 t = t.Replace("studio ", "");
-#if DEBUG
-                                Console.WriteLine("String Trim=> '" + t + "'");
-#endif
+//#if DEBUG
+//                                Console.WriteLine("String Trim=> '" + t + "'");
+//#endif
                                 t = t.Replace("game ready", "");
 
                                 i.Href = i.Href.Trim();
                                 
                                 // Sometimes Trim fails
                                 t = t.Replace(" ", "");
-                                i.Text = t;
-#if DEBUG
-                                Console.WriteLine("Found Thread =>'" + t + "'");
-#endif
+                                if (t.Contains("latestdiscussion"))
+                                {
+                                    continue;
+                                }
+                                i.Version = t;
+//#if DEBUG
+//                                Console.WriteLine("Found Thread =>'" + t + "'");
+//#endif
 #if DEBUG
                                 Console.WriteLine("Adding '" + t + "' (" + i.Href + ")");
 #endif
-                                list.Add(i);
+                                i.dlurl = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", i.Version, i.studio ? "nsd-" : "");
+#if DEBUG
+                                Console.WriteLine("URL: " + i.dlurl);
+#endif
+                                if (list.FindIndex(x => x.Version == i.Version) == -1)
+                                {
+                                    list.Add(i);
+                                }
                             }
                         }
                         else
@@ -134,7 +157,9 @@ namespace PicoGAUpdate
                     }
                 }
             }
-            return list;
+            // Sort the list
+            List<LinkItem> SortedList = list.OrderBy(o => o.Version).ToList();
+            return SortedList;
         }
     }
 }
