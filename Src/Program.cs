@@ -461,71 +461,18 @@ namespace PicoGAUpdate
                 Console.Write("Finding latest Nvidia Driver Version... ");
                 WebClient w = new WebClient();
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
-                //#if DEBUG
-                //                File.WriteAllText(@"C:\reddit.html", s);
-                //#endif
-
-                //                List<string> driverTitles = new List<string>();
-                // Populate list of links
                 List<LinkItem> list = new List<LinkItem>();
                 list = LinkFinder.Find(s);
                 LinkItem latestDriver = list.Last<LinkItem>();
                 foreach (LinkItem i in list)
                 {
-                    //#if DEBUG
-                    //                    Console.WriteLine(i.ToString());
-                    //#endif
-                    //                    string iS = i.Version;
-                    //                    {
-                    //#if DEBUG
-                    //                        Console.WriteLine("iS = '" + iS + "'");
-                    //#endif
-                    //                        string[] prefix = i.Version.Split(new string[] { "FAQ" }, StringSplitOptions.None);
-                    //                        string version = prefix.First().Split(new string[] { "Driver " }, StringSplitOptions.None).Last();
-                    //#if DEBUG
-                    //                        Console.WriteLine(version);
-                    //#endif
-                    //                        if (version.Contains("."))
-                    //                        {
-                    //                            driverTitles.Add(version);
-                    //                        }
-                    //                    }
-                    //                }
-
-                    //                if (driverTitles.Any())
-                    //                {
-                    //                    driverTitles.Sort();
-                    //#if DEBUG
-                    //                    Console.WriteLine("Available Versions:");
-                    //                    foreach (var driverVersion in driverTitles)
-                    //                    {
-                    //                        Console.WriteLine(driverVersion.ToString(CultureInfo.InvariantCulture));
-                    //                    }
-                    //                    Console.WriteLine("^~~~ Latest");
-                    //#endif
                     Console.WriteLine(i.Version + " (" + (i.studio ? "Studio" : "GameReady") + ")");
-                    //string latestDriver = driverTitles.Last();
-                    // Fix parsed numbers not matching the driver name format
-                    //string tempver = latestDriver.ToString();
-                    //latestDriver = StringToFloat(tempver);
-                    //#if !DEBUG
-                    //Console.WriteLine(driverTitles.Last());
                     // TODO: Implement specific version downloading here.
                     if (i.Version == latestDriver.Version)
                     {
                         Console.WriteLine("^~~~ Latest");
                     }
                 }
-                //#endif
-                //#if TEMP
-                // Build new URL from latest version
-                // Note: '388.00' becomes '388' somewhere above, need to add '.00' at the end if trying to use that one.
-                // http://us.download.nvidia.com/Windows/398.82/398.82-desktop-win10-64bit-international-whql.exe <= Valid
-                // http://us.download.nvidia.com/Windows/398.86/398.86-desktop-win10-64bit-international-whql.exe <= invalid
-                // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-nsd-whql.exe <= Studio Driver
-                // http://us.download.nvidia.com/Windows/430.86/430.86-desktop-win10-64bit-international-whql.exe <= GameReady Driver
-                //string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, i.studio ? "nsd-":"");
-                //string DownloadURL = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", latestDriver, i.studio ? "nsd-":"");
                 string downloadedFile = "";
                 bool needsDownload = IsOutOfDate(latestDriver.Version);
                 if (needsDownload)
@@ -552,11 +499,6 @@ namespace PicoGAUpdate
                         Console.WriteLine(e);
                     }
                 }
-                //                }
-                //                    else
-                //                    {
-                //                    Console.WriteLine("Something went wrong; unable to parse driver list from webpage");
-                //                }
                 if (dirty && OptionContainer.Strip)
                 {
                     Stripper.StripComponentsViaUninstall();

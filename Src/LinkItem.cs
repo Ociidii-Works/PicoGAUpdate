@@ -151,8 +151,6 @@ namespace PicoGAUpdate
                                 Console.WriteLine("Regex Failed on => " + i.Href);
                             }
 #endif
-                            // Skip to next link
-                            //continue;
                         }
                     }
                 }
