@@ -463,7 +463,7 @@ namespace PicoGAUpdate
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
                 List<LinkItem> list = new List<LinkItem>();
                 list = LinkFinder.Find(s);
-                LinkItem latestDriver = list.Last<LinkItem>();
+                LinkItem latestDriver = list.FindLast(x => x.studio == OptionContainer.Studio);
                 foreach (LinkItem i in list)
                 {
                     Console.WriteLine(i.Version + " (" + (i.studio ? "Studio" : "GameReady") + ")");
