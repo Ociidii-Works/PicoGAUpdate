@@ -229,7 +229,7 @@ namespace PicoGAUpdate
                     else
                     {
                         Console.WriteLine("No arguments given, using defaults");
-                        OptionContainer.Strip.SetValue(true);
+                        OptionContainer.Strip.SetValue(false);
                         OptionContainer.Silent.SetValue(true);
                     }
                 }
