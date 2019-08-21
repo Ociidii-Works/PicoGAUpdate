@@ -65,6 +65,7 @@ namespace PicoGAUpdate
             Console.Write("Determining driver version... ");
             // Add fallback value required for math, if driver is missing/not detected.
             string currVer = "000.00";
+            
             //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
             ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
             ManagementObjectCollection objCollection = objSearcher.Get();
@@ -89,7 +90,7 @@ namespace PicoGAUpdate
                     }
                 }
             }
-
+            // TODO: Remove need for calling StringToFloat again
             if (StringToFloat(currVer) < StringToFloat(newVersion))
             {
                 Console.WriteLine("A new driver version is available! ({0} => {1})", currVer, newVersion);
@@ -148,6 +149,7 @@ namespace PicoGAUpdate
         {
             CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
             ci.NumberFormat.CurrencyDecimalSeparator = ".";
+            float version = 0.0f;
             if (input.Contains(ci.NumberFormat.CurrencyDecimalSeparator))
             {
                 // Add a zero if the resulting minor version is under to (ie 411.7 instead of 411.70)
@@ -158,11 +160,21 @@ namespace PicoGAUpdate
                     input += "0";
                     Console.WriteLine("New version string is " + input);
                 }
-                float version = float.Parse(input ?? throw new ArgumentNullException(nameof(input)), NumberStyles.Currency, ci);
 
-                return version;
+                
+                bool success = false;
+                try
+                {
+                     success = float.TryParse(input ?? throw new ArgumentNullException(nameof(input)),
+                        NumberStyles.Currency, ci, out version);
+                }
+                catch (System.FormatException)
+                {
+                    // Nothing
+                }
+
             }
-            return 0.0f;
+            return version;
         }
 
         // ReSharper disable once UnusedMember.Local
@@ -439,6 +451,10 @@ namespace PicoGAUpdate
             // An alternative approach is to use https://stackoverflow.com/questions/38062177/is-it-possible-to-send-toast-notification-from-console-application
             // to have the ability to send a balloon tip
             MainProgramLoop(args);
+#if DEBUG
+            Console.WriteLine("Press any key to quit...");
+            Console.ReadKey();
+#endif
         }
         private static void MainProgramLoop(string[] args)
         {

@@ -125,19 +125,36 @@ namespace PicoGAUpdate
                                 {
                                     continue;
                                 }
-                                i.Version = t;
+                                // Extra url bits for special snowflake download urls
+                                string extra = "";
+                                float newver = Program.StringToFloat(t);
+                                if (newver > 0)
+                                {
+                                    if (newver.Equals(436.02f))
+                                    {
+                                        extra = "-rp";
+                                    }
+                                    i.Version = t;
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+                                
 //#if DEBUG
 //                                Console.WriteLine("Found Thread =>'" + t + "'");
 //#endif
 #if DEBUG
                                 Console.WriteLine("Adding '" + t + "' (" + i.Href + ")");
 #endif
-                                i.dlurl = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql.exe", i.Version, i.studio ? "nsd-" : "");
+                                i.dlurl = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql{2}.exe", i.Version, i.studio ? "nsd-" : "",extra);
 #if DEBUG
                                 Console.WriteLine("URL: " + i.dlurl);
 #endif
                                 if (list.FindIndex(x => x.Version == i.Version) == -1)
                                 {
+                                    // problematic versions with non-standard urls
+                                    
                                     list.Add(i);
                                 }
                             }
