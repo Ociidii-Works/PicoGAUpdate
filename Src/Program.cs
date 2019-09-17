@@ -259,6 +259,7 @@ namespace PicoGAUpdate
                 //#endif
                 DownloadDone = true;
                 NewDownloader.Success = true;
+                dirty = true;
             }
             else
             {
