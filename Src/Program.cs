@@ -488,7 +488,7 @@ namespace PicoGAUpdate
                     // TODO: Implement specific version downloading here.
                     if (i.Version == latestDriver.Version)
                     {
-                        Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ") <- Latest" + Environment.NewLine);
+                        Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ")" + Environment.NewLine);
                         break;
                     }
                     Console.CursorLeft = 0;
