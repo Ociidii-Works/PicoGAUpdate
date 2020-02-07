@@ -62,7 +62,8 @@ namespace PicoGAUpdate
             {
                 return true;
             }
-            Console.Write("Determining driver version... ");
+            Console.Write("Checking installed driver version... ");
+            Console.Out.Flush();
             // Add fallback value required for math, if driver is missing/not detected.
             string currVer = "000.00";
             
@@ -459,7 +460,7 @@ namespace PicoGAUpdate
         }
         private static void MainProgramLoop(string[] args)
         {
-            OptionContainer.Option.Parse(args);
+            //OptionContainer.Option.Parse(args);
 #if !DEBUG
             //Console.Clear();
             //int H = 15;
@@ -483,12 +484,15 @@ namespace PicoGAUpdate
                 LinkItem latestDriver = list.FindLast(x => x.studio == OptionContainer.Studio);
                 foreach (LinkItem i in list)
                 {
-                    Console.WriteLine(i.Version + " (" + (i.studio ? "Studio" : "GameReady") + ")");
+                    Console.Write(i.Version);
                     // TODO: Implement specific version downloading here.
                     if (i.Version == latestDriver.Version)
                     {
-                        Console.WriteLine("^~~~ Latest");
+                        Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ") <- Latest" + Environment.NewLine);
+                        break;
                     }
+                    Console.CursorLeft = 0;
+                    System.Threading.Thread.Sleep(50);
                 }
                 string downloadedFile = "";
                 bool needsDownload = IsOutOfDate(latestDriver.Version);
