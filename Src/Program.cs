@@ -492,7 +492,7 @@ namespace PicoGAUpdate
                         break;
                     }
                     Console.CursorLeft = 0;
-                    System.Threading.Thread.Sleep(50);
+                    System.Threading.Thread.Sleep(25);
                 }
                 string downloadedFile = "";
                 bool needsDownload = IsOutOfDate(latestDriver.Version);
