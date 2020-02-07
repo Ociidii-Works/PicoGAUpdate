@@ -475,7 +475,7 @@ namespace PicoGAUpdate
             if (!OptionContainer.NoUpdate)
             {
                 // FIXME: This shouldn't run unless we have to...
-                Console.Write("Finding latest Nvidia Driver Version... ");
+                Console.WriteLine("Finding latest Nvidia Driver Version... ");
                 WebClient w = new WebClient();
                 string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
                 List<LinkItem> list = new List<LinkItem>();
