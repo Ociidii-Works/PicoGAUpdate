@@ -56,52 +56,41 @@ namespace PicoGAUpdate
 			return string_in;
 		}
 
-		public static bool IsOutOfDate(string newVersion)
-		{
-			if (OptionContainer.ForceInstall)
-			{
-				return true;
-			}
-			Console.Write("Checking installed driver version... ");
-			Console.Out.Flush();
-			// Add fallback value required for math, if driver is missing/not detected.
-			string currVer = "000.00";
-			
-			//ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
-			ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
-			ManagementObjectCollection objCollection = objSearcher.Get();
-			foreach (var o in objCollection)
-			{
-				ManagementObject obj = (ManagementObject)o;
-				if ((string)obj["Manufacturer"] != "NVIDIA")
-				{
-				}
-				else
-				{
-					string device = obj["DeviceName"].ToString();
-					if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") || device.Contains("Tesla")))
-					{
-						// Rebuild version according to the nvidia format
-						string[] version = obj["DriverVersion"].ToString().Split('.');
-						{
-							string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-							Console.WriteLine(nvidiaVersion);
-							currVer = nvidiaVersion;
-						}
-					}
-				}
-			}
-			// TODO: Remove need for calling StringToFloat again
-			if (StringToFloat(currVer) < StringToFloat(newVersion))
-			{
-				Console.WriteLine("A new driver version is available! ({0} => {1})", currVer, newVersion);
-				return true;
-			}
-			Console.WriteLine("Your driver is up-to-date! Well done!");
-			return false;
-		}
+        public static string GetCurrentVersion()
+        {
+            Console.Write("Checking installed driver version... ");
+            Console.Out.Flush();
+            // Add fallback value required for math, if driver is missing/not detected.
+            string currVer = "000.00";
 
-		public static void RollingOutput(string data, bool clearRestOfLine = false)
+            //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
+            ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
+            ManagementObjectCollection objCollection = objSearcher.Get();
+            foreach (var o in objCollection)
+            {
+                ManagementObject obj = (ManagementObject)o;
+                if ((string)obj["Manufacturer"] != "NVIDIA")
+                {
+                }
+                else
+                {
+                    string device = obj["DeviceName"].ToString();
+                    if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") || device.Contains("Tesla")))
+                    {
+                        // Rebuild version according to the nvidia format
+                        string[] version = obj["DriverVersion"].ToString().Split('.');
+                        {
+                            string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
+                            Console.WriteLine(nvidiaVersion);
+                            currVer = nvidiaVersion;
+                        }
+                    }
+                }
+            }
+            return currVer;
+        }
+
+        public static void RollingOutput(string data, bool clearRestOfLine = false)
 		{
 			// Gross hack to prevent multiple outputting at once.
 			if (!_isoutputting)
@@ -458,6 +447,33 @@ namespace PicoGAUpdate
 			Console.ReadKey();
 #endif
 		}
+
+        private static LinkItem GetLatestDriverVersion()
+        {
+            // FIXME: This shouldn't run unless we have to...
+            Console.Write("Finding latest Nvidia Driver Version... ");
+           
+            int textEndCursorPos = Console.CursorLeft;
+            WebClient w = new WebClient();
+            string s = w.DownloadString(address: WebsiteUrls.RedditSource);
+            List<LinkItem> list = new List<LinkItem>();
+            
+            list = LinkFinderReddit.Find(s);
+            var latestVersion = list.FindLast(x => x.studio == OptionContainer.Studio);
+            foreach (LinkItem i in list)
+            {
+                Console.Write(i.Version);
+                // TODO: Implement specific version downloading here.
+                if (i.Version == latestVersion.Version)
+                {
+                    Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ")" + Environment.NewLine);
+                    break;
+                }
+                Console.CursorLeft = textEndCursorPos;
+                System.Threading.Thread.Sleep(25);
+            }
+            return latestVersion;
+        }
 		private static void MainProgramLoop(string[] args)
 		{
 			//OptionContainer.Option.Parse(args);
@@ -475,30 +491,22 @@ namespace PicoGAUpdate
 			bool dirty = true;
 			if (!OptionContainer.NoUpdate)
 			{
-				// FIXME: This shouldn't run unless we have to...
-				Console.Write("Finding latest Nvidia Driver Version... ");
-                int textEndCursorPos = Console.CursorLeft;
-				WebClient w = new WebClient();
-				string s = w.DownloadString(address: WebsiteUrls.DriverListSource);
-				List<LinkItem> list = new List<LinkItem>();
-				list = LinkFinder.Find(s);
-				LinkItem latestDriver = list.FindLast(x => x.studio == OptionContainer.Studio);
-				foreach (LinkItem i in list)
-				{
-					Console.Write(i.Version);
-					// TODO: Implement specific version downloading here.
-					if (i.Version == latestDriver.Version)
-					{
-						Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ")" + Environment.NewLine);
-						break;
-					}
-					Console.CursorLeft = textEndCursorPos;
-					System.Threading.Thread.Sleep(25);
-				}
+                LinkItem latestDriver = GetLatestDriverVersion();
 				string downloadedFile = "";
-				bool needsDownload = IsOutOfDate(latestDriver.Version);
-				if (needsDownload)
-				{
+                // Add fallback value required for math, if driver is missing/not detected.
+                string currentDriverVersion = GetCurrentVersion();
+                // TODO: Remove need for calling StringToFloat again
+                bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
+                if (currentIsOutOfDate)
+                {
+                    Console.WriteLine("A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
+                }
+                else
+                {
+                    Console.WriteLine("Your driver is up-to-date! Well done!");
+                }
+                if ( currentIsOutOfDate || OptionContainer.ForceDownload)
+                {
 					dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, out downloadedFile);
 				}
 				if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
@@ -543,9 +551,9 @@ namespace PicoGAUpdate
 
 	internal static class WebsiteUrls
 	{
-		// Don't abuse the search API
-		//public const string DriverListSource = "https://www.reddit.com/r/nvidia/search?q=FAQ/Discussion&restrict_sr=1&sort=new";
 		// TODO: Cache results to avoid spamming the site
-		public const string DriverListSource = "https://old.reddit.com/r/nvidia/search?q=Driver%20FAQ/Discussion&restrict_sr=1&sort=new";
-	}
+		public const string RedditSource = "https://old.reddit.com/r/nvidia/search?q=Driver%20FAQ/Discussion&restrict_sr=1&sort=new";
+        public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&languageCode=1078&beta=null&isWHQL=0&dltype=-1&dch=1&upCRD=0&sort1=0&numberOfResults=10";
+
+    }
 }

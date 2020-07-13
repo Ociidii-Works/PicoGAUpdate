@@ -18,7 +18,7 @@ namespace PicoGAUpdate
         }
     }
 
-    internal static class LinkFinder
+    internal static class LinkFinderReddit
     {
         public static List<LinkItem> Find(string file)
         {
