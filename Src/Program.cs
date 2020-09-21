@@ -94,14 +94,14 @@ namespace PicoGAUpdate
                         {
                             string device = obj["DeviceName"].ToString();
                             Console.WriteLine("Found AMD device '" + device + "'");
-                            Console.WriteLine("Sorry, support for AMD graphic cards is not currently implemented.")
+                            Console.WriteLine("Sorry, support for AMD graphic cards is not currently implemented.");
                         }
                         break;
                     case "INTEL":
                         {
                             string device = obj["DeviceName"].ToString();
                             Console.WriteLine("Found Intel device '" + device + "'");
-                            Console.WriteLine("Sorry, support for Intel graphic cards is not currently implemented.")
+                            Console.WriteLine("Sorry, support for Intel graphic cards is not currently implemented.");
                         }
                         break;
                     default:
