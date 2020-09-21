@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace PicoGAUpdate
 {
+    // TODO: Re-work how this is stored to allow creation via e.g. LinkItem(427.24), and string variant with included parser
     public struct LinkItem
     {
         public string Href;
@@ -12,7 +13,7 @@ namespace PicoGAUpdate
         public bool studio;
         public string dlurl;
 
-        public override string ToString()
+         public override string ToString()
         {
             return Href + "\n\t" + Version;
         }

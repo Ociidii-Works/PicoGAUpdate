@@ -73,6 +73,9 @@ namespace PicoGAUpdate
         public static Option Help = new Option("--help", "-h", false,
             "This help text.");
 
+        public static Option BareDriver = new Option("--bare", "-X", false,
+            "Only install the bare INF driver. Experimental.");
+
         public class Option
         {
             public override bool Equals(object obj)

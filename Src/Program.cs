@@ -8,54 +8,56 @@ using System.Management;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Runtime.InteropServices;
 
 namespace PicoGAUpdate
 
 {
-	static partial class Program
-	{
-		private static string CollapseSpaces(string value)
-		{
-			return Regex.Replace(value, @"\s+", " ");
-		}
+    static partial class Program
+    {
+        private static string CollapseSpaces(string value)
+        {
+            return Regex.Replace(value, @"\s+", " ");
+        }
 
-		public static bool DownloadDone;
-		public static bool ExitImmediately = true;
+        public static bool DownloadDone;
+        public static bool ExitImmediately = true;
 
-		// TODO: Remove
-		private static bool _isoutputting;
+        // TODO: Remove
+        private static bool _isoutputting;
 
-		public static string AutoPad(string stringIn, int targetLength = 0)
-		{
-			if (targetLength == 0)
-			{
-				//targetLength = Console.BufferWidth - Console.CursorLeft - 3;
-				targetLength = Console.BufferWidth - 3;
-			}
-			while (stringIn != null && stringIn.Length < targetLength)
-			{
-				stringIn += " ";
-			}
-			Console.SetCursorPosition(0, Console.CursorTop);
-			return stringIn;
-		}
+        public static string AutoPad(string stringIn, int targetLength = 0)
+        {
+            if (targetLength == 0)
+            {
+                //targetLength = Console.BufferWidth - Console.CursorLeft - 3;
+                targetLength = Console.BufferWidth - 3;
+            }
+            while (stringIn != null && stringIn.Length < targetLength)
+            {
+                stringIn += " ";
+            }
+            Console.SetCursorPosition(0, Console.CursorTop);
+            return stringIn;
+        }
 
-		public static string AutoPad2(string string_in, int target_length = 0)
-		{
-			if (target_length == 0)
-			{
-				target_length = Console.BufferWidth - Console.CursorLeft - 3;
-			}
+        public static string AutoPad2(string string_in, int target_length = 0)
+        {
+            if (target_length == 0)
+            {
+                target_length = Console.BufferWidth - Console.CursorLeft - 3;
+            }
 
-			string spaces = "";
-			while (string_in.Length + spaces.Length < target_length)
-			{
-				spaces += " ";
-			}
-			string_in = spaces + string_in;
-			return string_in;
-		}
+            string spaces = "";
+            while (string_in.Length + spaces.Length < target_length)
+            {
+                spaces += " ";
+            }
+            string_in = spaces + string_in;
+            return string_in;
+        }
 
+        // TODO: Make generic device enumerator that includes other device types
         public static string GetCurrentVersion()
         {
             Console.Write("Checking installed driver version... ");
@@ -69,319 +71,360 @@ namespace PicoGAUpdate
             foreach (var o in objCollection)
             {
                 ManagementObject obj = (ManagementObject)o;
-                if ((string)obj["Manufacturer"] != "NVIDIA")
+                string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
+                switch (mfg)
                 {
-                }
-                else
-                {
-                    string device = obj["DeviceName"].ToString();
-                    if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") || device.Contains("Tesla")))
-                    {
-                        // Rebuild version according to the nvidia format
-                        string[] version = obj["DriverVersion"].ToString().Split('.');
+                    case "NVIDIA":
                         {
-                            string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-                            Console.WriteLine(nvidiaVersion);
-                            currVer = nvidiaVersion;
+                            string device = obj["DeviceName"].ToString();
+                            if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") || device.Contains("Tesla")))
+                            {
+                                // Rebuild version according to the nvidia format
+                                string[] version = obj["DriverVersion"].ToString().Split('.');
+                                {
+                                    string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
+                                    Console.WriteLine(nvidiaVersion);
+                                    currVer = nvidiaVersion;
+                                }
+                            }
+                            
                         }
-                    }
+                        break;
+                    case "AMD":
+                        {
+                            string device = obj["DeviceName"].ToString();
+                            Console.WriteLine("Found AMD device '" + device + "'");
+                            Console.WriteLine("Sorry, support for AMD graphic cards is not currently implemented.")
+                        }
+                        break;
+                    case "INTEL":
+                        {
+                            string device = obj["DeviceName"].ToString();
+                            Console.WriteLine("Found Intel device '" + device + "'");
+                            Console.WriteLine("Sorry, support for Intel graphic cards is not currently implemented.")
+                        }
+                        break;
+                    default:
+                        // do nothing
+                        break;
                 }
             }
             return currVer;
         }
 
         public static void RollingOutput(string data, bool clearRestOfLine = false)
-		{
-			// Gross hack to prevent multiple outputting at once.
-			if (!_isoutputting)
-			{
-				_isoutputting = true;
+        {
+            // Gross hack to prevent multiple outputting at once.
+            if (!_isoutputting)
+            {
+                _isoutputting = true;
 
-				if (!string.IsNullOrEmpty(data))
-				{
-					data = data.Replace(Environment.NewLine, "");
-					try
-					{
-						Console.CursorVisible = false;
-						Console.Write('\r');
-						Console.SetCursorPosition(0, Console.CursorTop);
-						var top = Console.CursorTop;
+                if (!string.IsNullOrEmpty(data))
+                {
+                    data = data.Replace(Environment.NewLine, "");
+                    try
+                    {
+                        Console.CursorVisible = false;
+                        Console.Write('\r');
+                        Console.SetCursorPosition(0, Console.CursorTop);
+                        var top = Console.CursorTop;
 
-						if (Console.CursorLeft != 0)
-						{
-							Console.SetCursorPosition(0, top);
-						}
+                        if (Console.CursorLeft != 0)
+                        {
+                            Console.SetCursorPosition(0, top);
+                        }
 
-						if (clearRestOfLine)
-						{
-							Console.Write(AutoPad(data));
-						}
-						else
-						{
-							Console.Write(data);
-						}
+                        if (clearRestOfLine)
+                        {
+                            Console.Write(AutoPad(data));
+                        }
+                        else
+                        {
+                            Console.Write(data);
+                        }
 
-						if (Console.CursorTop != top)
-						{
-							Console.SetCursorPosition(0, Console.CursorTop - top);
-						}
-					}
-					catch
-					{
-						// ignored
-					}
-				}
-				_isoutputting = false;
-			}
-		}
+                        if (Console.CursorTop != top)
+                        {
+                            Console.SetCursorPosition(0, Console.CursorTop - top);
+                        }
+                    }
+                    catch
+                    {
+                        // ignored
+                    }
+                }
+                _isoutputting = false;
+            }
+        }
 
-		public static float StringToFloat(string input)
-		{
-			CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
-			ci.NumberFormat.CurrencyDecimalSeparator = ".";
-			float version = 0.0f;
-			if (input.Contains(ci.NumberFormat.CurrencyDecimalSeparator))
-			{
-				// Add a zero if the resulting minor version is under to (ie 411.7 instead of 411.70)
-				string result = input.Substring(input.LastIndexOf(ci.NumberFormat.CurrencyDecimalSeparator) + 1);
-				if (result.Length < 2)
-				{
-					Console.WriteLine("Hmmm... Result is " + result);
-					input += "0";
-					Console.WriteLine("New version string is " + input);
-				}
+        public static float StringToFloat(string input)
+        {
+            CultureInfo ci = (CultureInfo)CultureInfo.CurrentCulture.Clone();
+            ci.NumberFormat.CurrencyDecimalSeparator = ".";
+            float version = 0.0f;
+            if (input.Contains(ci.NumberFormat.CurrencyDecimalSeparator))
+            {
+                // Add a zero if the resulting minor version is under to (ie 411.7 instead of 411.70)
+                string result = input.Substring(input.LastIndexOf(ci.NumberFormat.CurrencyDecimalSeparator) + 1);
+                if (result.Length < 2)
+                {
+                    Console.WriteLine("Hmmm... Result is " + result);
+                    input += "0";
+                    Console.WriteLine("New version string is " + input);
+                }
 
-				
-				bool success = false;
-				try
-				{
-					 success = float.TryParse(input ?? throw new ArgumentNullException(nameof(input)),
-						NumberStyles.Currency, ci, out version);
-				}
-				catch (System.FormatException)
-				{
-					// Nothing
-				}
 
-			}
-			return version;
-		}
+                bool success = false;
+                try
+                {
+                    success = float.TryParse(input ?? throw new ArgumentNullException(nameof(input)),
+                       NumberStyles.Currency, ci, out version);
+                }
+                catch (System.FormatException)
+                {
+                    // Nothing
+                }
 
-		// ReSharper disable once UnusedMember.Local
-		private static void Cleanup()
-		{
-			string installer2 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) + @"\NVIDIA Corporation\Installer2";
-			if (!CheckAdmin.IsElevated)
-			{
-				Console.ForegroundColor = ConsoleColor.Red;
-				Console.WriteLine("Administrative rights are required to clean " + installer2 + ".");
-				Console.ResetColor();
-				return;
-			}
+            }
+            return version;
+        }
 
-			try
-			{
-				Console.WriteLine("Deleting installer2...");
-				DeleteFilesFromDirectory(installer2, true);
-			}
-			catch (Exception e)
-			{
-				Debug.WriteLine(e);
-			}
+        // ReSharper disable once UnusedMember.Local
+        private static void Cleanup()
+        {
+            string installer2 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles) + @"\NVIDIA Corporation\Installer2";
+            if (!CheckAdmin.IsElevated)
+            {
+                Console.ForegroundColor = ConsoleColor.Red;
+                Console.WriteLine("Administrative rights are required to clean " + installer2 + ".");
+                Console.ResetColor();
+                return;
+            }
 
-			Console.WriteLine("Done");
-		}
+            try
+            {
+                Console.WriteLine("Deleting installer2...");
+                DeleteFilesFromDirectory(installer2, true);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
 
-		private static void DeleteFilesFromDirectory(string directoryPath, bool verbose = false)
-		{
-			if (Directory.Exists(directoryPath))
-			{
-				DirectoryInfo d = new DirectoryInfo(directoryPath);
+            Console.WriteLine("Done");
+        }
 
-				foreach (FileInfo fi in d.GetFiles())
-				{
-					try
-					{
-						if (verbose)
-						{
-							Console.WriteLine("Deleting " + fi);
-						}
-						fi.Delete();
-					}
-					catch (Exception e)
-					{
-						Debug.WriteLine(e);
-					}
-				}
+        private static void DeleteFilesFromDirectory(string directoryPath, bool verbose = false)
+        {
+            if (Directory.Exists(directoryPath))
+            {
+                DirectoryInfo d = new DirectoryInfo(directoryPath);
 
-				foreach (DirectoryInfo di in d.GetDirectories())
-				{
-					DeleteFilesFromDirectory(di.FullName);
+                foreach (FileInfo fi in d.GetFiles())
+                {
+                    try
+                    {
+                        if (verbose)
+                        {
+                            Console.WriteLine("Deleting " + fi);
+                        }
+                        fi.Delete();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e);
+                    }
+                }
 
-					try
-					{
-						if (verbose)
-						{
-							Console.WriteLine("Deleting " + di);
-						}
-						di.Delete();
-					}
-					catch (Exception e)
-					{
-						Debug.WriteLine(e);
-						ExitImmediately = false;
-					}
-				}
-			}
-		}
+                foreach (DirectoryInfo di in d.GetDirectories())
+                {
+                    DeleteFilesFromDirectory(di.FullName);
 
-		private static bool DownloadDriver(string url, string version, out string downloadedFile)
-		{
-			string newFile = "";
-			bool dirty = false;
-			// TODO: Figure what to do when downloading an older version
-			string versionS = version.ToString(CultureInfo.InvariantCulture);
-			newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-			if (File.Exists(newFile) && !(OptionContainer.ForceDownload))
-			{
-				//#if DEBUG
-				Console.WriteLine("Using Existing installer at " + newFile);
-				//#endif
-				DownloadDone = true;
-				NewDownloader.Success = true;
-				dirty = true;
-			}
-			else
-			{
-				Console.WriteLine("Downloading Driver version " + version
+                    try
+                    {
+                        if (verbose)
+                        {
+                            Console.WriteLine("Deleting " + di);
+                        }
+                        di.Delete();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e);
+                        ExitImmediately = false;
+                    }
+                }
+            }
+        }
+
+        private static bool DownloadDriver(string url, string version, out string downloadedFile)
+        {
+            string newFile = "";
+            bool dirty = false;
+            // TODO: Figure what to do when downloading an older version
+            string versionS = version.ToString(CultureInfo.InvariantCulture);
+            newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
+            if (File.Exists(newFile) && !(OptionContainer.ForceDownload))
+            {
+                //#if DEBUG
+                Console.WriteLine("Using Existing installer at " + newFile);
+                //#endif
+                DownloadDone = true;
+                NewDownloader.Success = true;
+                dirty = true;
+            }
+            else
+            {
+                Console.WriteLine("Downloading Driver version " + version
 #if DEBUG
 					+ " from " + url + Environment.NewLine + "to " + newFile
 #endif
-					 + "...");
-				Task.Run(() => new NewDownloader().Download(url, newFile));
-				while (!DownloadDone)
-				{
-					// wait
-				}
-				if (NewDownloader.Success)
-				{
-					if (File.Exists(newFile))
-					{
-						Console.WriteLine("Deleting old copy");
-						File.Delete(newFile);
-					}
-					NewDownloader.RenameDownload(newFile);
-					dirty = true;
-				}
-			}
-			downloadedFile = newFile;
-			return dirty;
-		}
+                     + "...");
+                Task.Run(() => new NewDownloader().Download(url, newFile));
+                while (!DownloadDone)
+                {
+                    // wait
+                }
+                if (NewDownloader.Success)
+                {
+                    if (File.Exists(newFile))
+                    {
+                        Console.WriteLine("Deleting old copy");
+                        File.Delete(newFile);
+                    }
+                    NewDownloader.RenameDownload(newFile);
+                    dirty = true;
+                }
+            }
+            downloadedFile = newFile;
+            return dirty;
+        }
 
-		public static void CopyAll(DirectoryInfo source, DirectoryInfo target)
-		{
-			Directory.CreateDirectory(target.FullName);
+        public static void CopyAll(DirectoryInfo source, DirectoryInfo target)
+        {
+            Directory.CreateDirectory(target.FullName);
 
-			// Copy each file into the new directory.
-			foreach (FileInfo fi in source.GetFiles())
-			{
+            // Copy each file into the new directory.
+            foreach (FileInfo fi in source.GetFiles())
+            {
 #if DEBUG
 				Console.WriteLine(@"Copying {0}\{1}", target.FullName, fi.Name);
 #endif
-				fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
-			}
+                fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
+            }
 
-			// Copy each subdirectory using recursion.
-			foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
-			{
-				DirectoryInfo nextTargetSubDir =
-					target.CreateSubdirectory(diSourceSubDir.Name);
-				CopyAll(diSourceSubDir, nextTargetSubDir);
-			}
-		}
+            // Copy each subdirectory using recursion.
+            foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
+            {
+                DirectoryInfo nextTargetSubDir =
+                    target.CreateSubdirectory(diSourceSubDir.Name);
+                CopyAll(diSourceSubDir, nextTargetSubDir);
+            }
+        }
 
-		public static bool InstallDriver(string installerPath, string version)
-		{
-			bool dirty = false;
-			if (string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath))
-			{
-				return false;
-			}
-			string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
-			try
-			{
-				// Find WinRar
-				string winRar = "";
-				// 64-bit Winrar on 64-bit architecture
-				string winRar6432P = Environment.GetEnvironmentVariable("ProgramW6432") +
-									 @"\WinRAR\WinRAR.exe";
-				// 64-bit WinRAR from 32-bit app
-				string winRar6464P = Environment.SpecialFolder.ProgramFiles + @"\WinRAR\WinRAR.exe";
-				// 32-bit Winrar on 64-bit architecture
-				string winRar3264P = Environment.SpecialFolder.ProgramFilesX86 + @"\WinRAR\WinRAR.exe";
-				if (File.Exists(winRar6464P))
-				{
-					winRar = winRar6464P;
-				}
-				else if (File.Exists(winRar6432P))
-				{
-					winRar = winRar6432P;
-				}
-				else if (File.Exists(winRar3264P))
-				{
-					winRar = winRar3264P;
-				}
 
-				if (!string.IsNullOrEmpty(winRar))
-				{
+        [DllImport("Setupapi.dll", EntryPoint = "InstallHinfSection", CallingConvention = CallingConvention.StdCall)]
+        public static extern void InstallHinfSection(
+                            [In] IntPtr hwnd,
+                            [In] IntPtr ModuleHandle,
+                            [In, MarshalAs(UnmanagedType.LPWStr)] string CmdLineBuffer,
+                            int nCmdShow);
+
+        public static bool InstallDriver(string installerPath, string version)
+        {
+            bool dirty = false;
+            if (string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath))
+            {
+                return false;
+            }
+            string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
+            try
+            {
+                // Find WinRar
+                string winRar = "";
+                // 64-bit Winrar on 64-bit architecture
+                string winRar6432P = Environment.GetEnvironmentVariable("ProgramW6432") +
+                                     @"\WinRAR\WinRAR.exe";
+                // 64-bit WinRAR from 32-bit app
+                string winRar6464P = Environment.SpecialFolder.ProgramFiles + @"\WinRAR\WinRAR.exe";
+                // 32-bit Winrar on 64-bit architecture
+                string winRar3264P = Environment.SpecialFolder.ProgramFilesX86 + @"\WinRAR\WinRAR.exe";
+                if (File.Exists(winRar6464P))
+                {
+                    winRar = winRar6464P;
+                }
+                else if (File.Exists(winRar6432P))
+                {
+                    winRar = winRar6432P;
+                }
+                else if (File.Exists(winRar3264P))
+                {
+                    winRar = winRar3264P;
+                }
+
+                if (!string.IsNullOrEmpty(winRar))
+                {
 #if DEBUG
 					Console.WriteLine("WinRAR = " + winRar);
 #endif
-					if (!Directory.Exists(extractPath))
-					{
-						Console.WriteLine("Creating " + extractPath);
-						Directory.CreateDirectory(extractPath);
-					}
-
-					Process wProcess = new Process
-					{
-						StartInfo =
-						{
-							FileName = winRar,
-							UseShellExecute = false,
-							CreateNoWindow = false,
-							Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, extractPath)
-						}
-					};
-					Console.WriteLine("Extracting installer " + installerPath + "...");
+                    if (!Directory.Exists(extractPath))
+                    {
+                        Console.WriteLine("Creating " + extractPath);
+                        Directory.CreateDirectory(extractPath);
+                    }
+                    if (!Directory.Exists(extractPath + @"\Display.Driver"))
+                    {
+                        Process wProcess = new Process
+                        {
+                            StartInfo =
+                        {
+                            FileName = winRar,
+                            UseShellExecute = false,
+                            CreateNoWindow = false,
+                            Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, extractPath)
+                        }
+                        };
+                        Console.WriteLine("Extracting installer " + installerPath + "...");
 #if DEBUG
 					Console.WriteLine(String.Format(" % \"{0}\" {1}", wProcess.StartInfo.FileName,
 					wProcess.StartInfo.Arguments));
 #endif
-					// Try to create the full path just in case...
-					//Directory.CreateDirectory(@"C:\NVIDIA");
-					//Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
-					wProcess.Start();
-					wProcess.WaitForExit();
-					// Move to C:\NVIDIA (where the installer expects it) and remove Win10_64\International\ hierarchy levels
-					// string newDir = @"C:\NVIDIA\DisplayDriver\" + version.ToString();
-					// if (Directory.Exists(newDir))
-					// {
-					//     Console.WriteLine("Deleting " + newDir);
-					//     Safe.DirectoryDelete(newDir, false);
-					// }
-					// Directory.CreateDirectory(newDir);
-					// Console.WriteLine("Copying " + extractPath + " => " + newDir);
-					// System.IO.DirectoryInfo dirsrc = new System.IO.DirectoryInfo(extractPath);
-					// System.IO.DirectoryInfo dirtarget = new System.IO.DirectoryInfo(newDir);
-					// CopyAll(dirsrc, dirtarget);
-					// // NOOO!! See below; Cannot delete this.
-					// //extractPath = newDir;
-					// installerPath = newDir + @"\setup.exe";
+                        // Try to create the full path just in case...
+                        //Directory.CreateDirectory(@"C:\NVIDIA");
+                        //Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
+                        wProcess.Start();
+                        wProcess.WaitForExit();
+                        // Move to C:\NVIDIA (where the installer expects it) and remove Win10_64\International\ hierarchy levels
+                        // string newDir = @"C:\NVIDIA\DisplayDriver\" + version.ToString();
+                        // if (Directory.Exists(newDir))
+                        // {
+                        //     Console.WriteLine("Deleting " + newDir);
+                        //     Safe.DirectoryDelete(newDir, false);
+                        // }
+                        // Directory.CreateDirectory(newDir);
+                        // Console.WriteLine("Copying " + extractPath + " => " + newDir);
+                        // System.IO.DirectoryInfo dirsrc = new System.IO.DirectoryInfo(extractPath);
+                        // System.IO.DirectoryInfo dirtarget = new System.IO.DirectoryInfo(newDir);
+                        // CopyAll(dirsrc, dirtarget);
+                        // // NOOO!! See below; Cannot delete this.
+                        // //extractPath = newDir;
+                        // installerPath = newDir + @"\setup.exe";
 
-					Console.WriteLine("Done.");
+                        Console.WriteLine("Done.");
+                    }
 
-					// Hack up the installer a little to remove unwanted "features" such as Telemetry
+                    if (OptionContainer.BareDriver)
+                    {
+                        Console.WriteLine("Installing bare driver...");
+                        string[] array2 = Directory.GetFiles(extractPath + @"\Display.Driver", "*.INF");
+                        foreach (string name in array2)
+                        {
+                            Console.WriteLine(name);
+                            InstallHinfSection(IntPtr.Zero, IntPtr.Zero, name, 0);
+                        }
+
+                    }
+                        					// Hack up the installer a little to remove unwanted "features" such as Telemetry
 					if (OptionContainer.Strip)
 					{
 						if (Directory.Exists(extractPath + @"\NvTelemetry"))
@@ -399,22 +442,27 @@ namespace PicoGAUpdate
 				string setupPath = extractPath + @"\setup.exe";
 				Process p = new Process();
 				p.StartInfo.FileName = setupPath ?? throw new ArgumentNullException(nameof(setupPath));
-				if (OptionContainer.Silent)
-				{
-					Console.WriteLine("Running Installer silently... Your monitor(s) may flicker several times...");
-					p.StartInfo.Arguments = "-s";
-				}
-				else
-				{
-					Console.WriteLine("Running GUI Installer"
+                if (!OptionContainer.BareDriver)
+                {
+                    if (OptionContainer.Silent || OptionContainer.Strip)
+                    {
+                        Console.WriteLine("Running Installer silently... Your monitor(s) may flicker several times...");
+                        p.StartInfo.Arguments = "-s";
+                    }
+                    else
+                    {
+                        Console.WriteLine("Running GUI Installer"
 #if DEBUB
 						+ " from " + p.StartInfo.FileName
 #endif
-						+ "...");
-				}
-
-				p.Start();
-				p.WaitForExit();
+                        + "...");
+                    }
+                    if (!System.Diagnostics.Debugger.IsAttached)
+                    {
+                        p.Start();
+                        p.WaitForExit();
+                    }
+                }
 				Console.WriteLine("Driver installed.");
 				//Cleanup();
 			}
@@ -459,7 +507,7 @@ namespace PicoGAUpdate
             List<LinkItem> list = new List<LinkItem>();
             
             list = LinkFinderReddit.Find(s);
-            var latestVersion = list.FindLast(x => x.studio == OptionContainer.Studio);
+            LinkItem latestVersion = list.FindLast(x => x.studio == OptionContainer.Studio);
             foreach (LinkItem i in list)
             {
                 Console.Write(i.Version);
@@ -501,11 +549,15 @@ namespace PicoGAUpdate
                 {
                     Console.WriteLine("A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
                 }
-                else
+                else if (OptionContainer.ForceDownload)
+                {
+                    Console.WriteLine("Downloading driver as requested.");
+                }
+                else if (!OptionContainer.ForceInstall)
                 {
                     Console.WriteLine("Your driver is up-to-date! Well done!");
                 }
-                if ( currentIsOutOfDate || OptionContainer.ForceDownload)
+                if (currentIsOutOfDate || OptionContainer.ForceDownload || (OptionContainer.ForceInstall && !Directory.Exists(Path.GetTempPath() + @"DriverUpdateEX")));
                 {
 					dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, out downloadedFile);
 				}
