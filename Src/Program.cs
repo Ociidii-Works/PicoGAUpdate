@@ -9,12 +9,20 @@ using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Runtime.InteropServices;
+using System.Collections.ObjectModel;
 
 namespace PicoGAUpdate
 
 {
 	static partial class Program
 	{
+        public static readonly string NvidiaExtractedPath = Path.GetTempPath() + @"DriverUpdateEX";
+		public static readonly IList<String> NvidiaCoreComponents = new ReadOnlyCollection<string>(new List<String> {
+							"Display.Driver",
+							"NVI2",
+							"PhysX",
+							"NvContainer"
+						});
 		private static string CollapseSpaces(string value)
 		{
 			return Regex.Replace(value, @"\s+", " ");
@@ -58,7 +66,7 @@ namespace PicoGAUpdate
 		}
 
 		public static string GetChipsetModel()
-        {
+		{
 #if DEBUG
 			Console.WriteLine("===== Motherboard =====");
 			Console.WriteLine("Manufacturer: " + MotherboardInfo.Manufacturer);
@@ -68,20 +76,20 @@ namespace PicoGAUpdate
 			Console.Out.Flush();
 #endif
 			// A crude implementation until more testing is done
-			if(MotherboardInfo.Model != null)
-            {
+			if (MotherboardInfo.Model != null)
+			{
 
 				if (MotherboardInfo.Model.Contains("X570"))
-                {
+				{
 					return "X570";
-                }
-            }
+				}
+			}
 			return null;
 		}
 		// TODO: Make generic device enumerator that includes other device types
 		public static string GetCurrentVersion()
 		{
-			Console.WriteLine("Checking installed Device Drivers...");
+			Console.Write("Checking installed Device Drivers...");
 			// Add fallback value required for math, if driver is missing/not detected.
 			string currVer = "000.00";
 
@@ -111,7 +119,8 @@ namespace PicoGAUpdate
 								string[] version = obj["DriverVersion"].ToString().Split('.');
 								{
 									string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-									Console.WriteLine("NVIDIA Driver v"+ nvidiaVersion);
+									Console.Write("NVIDIA Driver v" + nvidiaVersion);
+									Console.WriteLine();
 									currVer = nvidiaVersion;
 								}
 							}
@@ -284,17 +293,15 @@ namespace PicoGAUpdate
 			}
 		}
 
-		private static bool DownloadDriver(string url, string version, out string downloadedFile)
+		private static bool DownloadDriver(string url, string version, string destination)
 		{
-			string newFile = "";
 			bool dirty = false;
 			// TODO: Figure what to do when downloading an older version
-			string versionS = version.ToString(CultureInfo.InvariantCulture);
-			newFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-			if (File.Exists(newFile) && !(OptionContainer.ForceDownload))
+			
+			if (File.Exists(destination) && !(OptionContainer.ForceDownload))
 			{
 				//#if DEBUG
-				Console.WriteLine("Using Existing installer at " + newFile);
+				Console.WriteLine("Using Existing installer at " + destination);
 				//#endif
 				DownloadDone = true;
 				NewDownloader.Success = true;
@@ -304,26 +311,25 @@ namespace PicoGAUpdate
 			{
 				Console.WriteLine("Downloading Driver version " + version
 #if DEBUG
-					+ " from " + url + Environment.NewLine + "to " + newFile
+					+ " from " + url + Environment.NewLine + "to " + destination
 #endif
 					 + "...");
-				Task.Run(() => new NewDownloader().Download(url, newFile));
+				Task.Run(() => new NewDownloader().Download(url, destination));
 				while (!DownloadDone)
 				{
 					// wait
 				}
 				if (NewDownloader.Success)
 				{
-					if (File.Exists(newFile))
+					if (File.Exists(destination))
 					{
 						Console.WriteLine("Deleting old copy");
-						File.Delete(newFile);
+						File.Delete(destination);
 					}
-					NewDownloader.RenameDownload(newFile);
+					NewDownloader.RenameDownload(destination);
 					dirty = true;
 				}
 			}
-			downloadedFile = newFile;
 			return dirty;
 		}
 
@@ -357,14 +363,9 @@ namespace PicoGAUpdate
 							[In, MarshalAs(UnmanagedType.LPWStr)] string CmdLineBuffer,
 							int nCmdShow);
 
-		public static bool InstallDriver(string installerPath, string version)
+		public static void StripDriver(string installerPath, string version)
 		{
-			bool dirty = false;
-			if (string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath))
-			{
-				return false;
-			}
-			string extractPath = Path.GetTempPath() + @"DriverUpdateEX";
+
 			try
 			{
 				// Find WinRar
@@ -395,11 +396,11 @@ namespace PicoGAUpdate
 					Console.WriteLine("WinRAR = " + winRar);
 #endif
 					// TODO: Optimize checks here
-					if (!File.Exists(extractPath + @"\setup.exe"))
+					if (!Directory.Exists(NvidiaExtractedPath) || !File.Exists(NvidiaExtractedPath + @"\setup.exe") || !Directory.Exists(NvidiaExtractedPath + @"\Display.Driver"))
 					{
-						Safe.DirectoryDelete(extractPath);
-						Console.WriteLine("Creating " + extractPath);
-						Directory.CreateDirectory(extractPath);
+						//Safe.DirectoryDelete(NvidiaExtractedPath);
+						Console.WriteLine("Creating " + NvidiaExtractedPath);
+						Directory.CreateDirectory(NvidiaExtractedPath);
 
 						Process wProcess = new Process
 						{
@@ -408,42 +409,24 @@ namespace PicoGAUpdate
 							FileName = winRar,
 							UseShellExecute = false,
 							CreateNoWindow = false,
-							Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, extractPath)
+							Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, NvidiaExtractedPath)
 						}
 						};
-						Console.WriteLine("Extracting installer " + installerPath + "...");
-//#if DEBUG
-						Console.WriteLine(String.Format(" % \"{0}\" {1}", wProcess.StartInfo.FileName,
+						Console.Write("Extracting installer '" + installerPath + "'");
+#if DEBUG
+						Console.Write(String.Format(" using  '\"{0}\" {1}' ", wProcess.StartInfo.FileName,
 						wProcess.StartInfo.Arguments));
-//#endif
-						// Try to create the full path just in case...
-						//Directory.CreateDirectory(@"C:\NVIDIA");
-						//Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
+#endif
+						Console.WriteLine("");
 						wProcess.Start();
 						wProcess.WaitForExit();
-						// Move to C:\NVIDIA (where the installer expects it) and remove Win10_64\International\ hierarchy levels
-						// string newDir = @"C:\NVIDIA\DisplayDriver\" + version.ToString();
-						// if (Directory.Exists(newDir))
-						// {
-						//     Console.WriteLine("Deleting " + newDir);
-						//     Safe.DirectoryDelete(newDir, false);
-						// }
-						// Directory.CreateDirectory(newDir);
-						// Console.WriteLine("Copying " + extractPath + " => " + newDir);
-						// System.IO.DirectoryInfo dirsrc = new System.IO.DirectoryInfo(extractPath);
-						// System.IO.DirectoryInfo dirtarget = new System.IO.DirectoryInfo(newDir);
-						// CopyAll(dirsrc, dirtarget);
-						// // NOOO!! See below; Cannot delete this.
-						// //extractPath = newDir;
-						// installerPath = newDir + @"\setup.exe";
-
 						Console.WriteLine("Done.");
 					}
 
 					if (OptionContainer.BareDriver)
 					{
 						Console.WriteLine("Installing bare driver...");
-						string[] array2 = Directory.GetFiles(extractPath + @"\Display.Driver", "*.INF");
+						string[] array2 = Directory.GetFiles(NvidiaExtractedPath + @"\Display.Driver", "*.INF");
 						foreach (string name in array2)
 						{
 							Console.WriteLine(name);
@@ -451,14 +434,29 @@ namespace PicoGAUpdate
 						}
 
 					}
+
 					// Hack up the installer a little to remove unwanted "features" such as Telemetry
 					if (OptionContainer.Strip)
 					{
-						if (Directory.Exists(extractPath + @"\NvTelemetry"))
+						Console.WriteLine("Stripping driver...");
+
+						List<string> components = Directory.EnumerateDirectories(NvidiaExtractedPath).ToList<string>();
+
+						foreach (string c in components)
 						{
-							Safe.DirectoryDelete(extractPath + @"\NvTelemetry", false);
-							Console.WriteLine("Removed NvTelemetry.");
+							if (NvidiaCoreComponents.Contains(System.IO.Path.GetFileName(c)))
+
+							{
+								continue;
+							}
+							Safe.DirectoryDelete(c, true);
 						}
+						// edit setup.cfg to prevent failure
+						string text = File.ReadAllText(NvidiaExtractedPath + @"\setup.cfg");
+						text = text.Replace(@"<file name=""${{EulaHtmlFile}}""/>", "");
+						text = text.Replace(@"<file name=""${{FunctionalConsentFile}}""/>", "");
+						text = text.Replace(@"<file name=""${{PrivacyPolicyFile}}""/>", "");
+						File.WriteAllText(NvidiaExtractedPath + @"\setup.cfg", text);
 					}
 				}
 				else
@@ -466,7 +464,24 @@ namespace PicoGAUpdate
 					Console.WriteLine("Driver modification requires WinRAR. Please install in the default location.");
 					Environment.Exit(1);
 				}
-				string setupPath = extractPath + @"\setup.exe";
+			}
+			catch(Exception e)
+            {
+				throw e;
+            }
+		}
+		public static bool InstallDriver(string installerPath, string version)
+		{
+			bool dirty = false;
+			if ((string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath)) && !Directory.Exists(NvidiaExtractedPath))
+			{
+				throw new Exception("Installer file does not exist!");
+			}
+			StripDriver(installerPath, version);
+
+			try
+			{
+				string setupPath = NvidiaExtractedPath + @"\setup.exe";
 				Process p = new Process();
 				p.StartInfo.FileName = setupPath ?? throw new ArgumentNullException(nameof(setupPath));
 #if DEBUG
@@ -489,22 +504,29 @@ namespace PicoGAUpdate
 					}
 					//if (!System.Diagnostics.Debugger.IsAttached)
 					{
-						p.Start();
-						p.WaitForExit();
+						try
+						{
+							p.Start();
+							p.WaitForExit();
+						}
+						catch (Exception e)
+						{
+							throw e;
+						}
 					}
 				}
 				Console.WriteLine("Driver installed.");
 				//Cleanup();
 			}
-			catch (Exception ex)
+			catch (Exception e)
 			{
-				Console.WriteLine(ex);
+				throw(e);
 			}
 			finally
 			{
 				if (OptionContainer.DeleteDownloaded)
 				{
-					Safe.DirectoryDelete(extractPath);
+					Safe.DirectoryDelete(NvidiaExtractedPath);
 					File.Delete(installerPath);
 				}
 				dirty = true;
@@ -570,7 +592,7 @@ namespace PicoGAUpdate
 			bool dirty = false;
 			if (!OptionContainer.NoUpdate)
 			{
-				string downloadedFile = "";
+				
 				// WIP Chipset updater
 				switch (GetChipsetModel())
 				{
@@ -583,6 +605,9 @@ namespace PicoGAUpdate
 						break;
 				}
 				LinkItem latestDriver = GetLatestDriverVersion();
+				// Fallback path
+				string versionS = latestDriver.Version.ToString(CultureInfo.InvariantCulture);
+				string downloadedFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
 				// TODO: Remove need for calling StringToFloat again
 				bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
 				if (currentIsOutOfDate)
@@ -597,9 +622,9 @@ namespace PicoGAUpdate
 				{
 					Console.WriteLine("Your driver is up-to-date! Well done!");
 				}
-				if (OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && !Directory.Exists(Path.GetTempPath() + @"DriverUpdateEX")))
+				if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
 				{
-					dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, out downloadedFile);
+					dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, downloadedFile);
 				}
 				if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
 				{
@@ -621,10 +646,10 @@ namespace PicoGAUpdate
 						Console.WriteLine(e);
 					}
 				}
-				if (dirty && OptionContainer.Strip)
-				{
-					Stripper.StripComponentsViaUninstall();
-				}
+				//if (dirty && OptionContainer.Strip)
+				//{
+				//	Stripper.StripComponentsViaUninstall();
+				//}
 				if (OptionContainer.Clean)
 				{
 					Cleanup();
