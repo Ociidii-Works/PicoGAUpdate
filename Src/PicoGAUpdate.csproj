@@ -57,6 +57,7 @@
     <Compile Include="CheckAdmin.cs" />
     <Compile Include="Downloader.cs" />
     <Compile Include="LinkItem.cs" />
+    <Compile Include="MotherboardInfo.cs" />
     <Compile Include="OptionContainer.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -57,18 +57,46 @@ namespace PicoGAUpdate
 			return string_in;
 		}
 
+		public static string GetChipsetModel()
+        {
+#if DEBUG
+			Console.WriteLine("===== Motherboard =====");
+			Console.WriteLine("Manufacturer: " + MotherboardInfo.Manufacturer);
+			Console.WriteLine("Model: " + MotherboardInfo.Model);
+			Console.WriteLine("PNPDeviceID: " + MotherboardInfo.PNPDeviceID);
+			Console.WriteLine("Product: " + MotherboardInfo.Product);
+			Console.Out.Flush();
+#endif
+			// A crude implementation until more testing is done
+			if(MotherboardInfo.Model != null)
+            {
+
+				if (MotherboardInfo.Model.Contains("X570"))
+                {
+					return "X570";
+                }
+            }
+			return null;
+		}
 		// TODO: Make generic device enumerator that includes other device types
 		public static string GetCurrentVersion()
 		{
-			Console.Write("Checking installed driver version... ");
-			Console.Out.Flush();
+			Console.WriteLine("Checking installed Device Drivers...");
 			// Add fallback value required for math, if driver is missing/not detected.
 			string currVer = "000.00";
 
 			//ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
-			ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
-			ManagementObjectCollection objCollection = objSearcher.Get();
-			foreach (var o in objCollection)
+			ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
+			ManagementObjectCollection DisplayCollection = DisplaySearcher.Get();
+
+#if DEBUG
+			foreach (ManagementObject obj in DisplayCollection)
+			{
+				string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
+				Console.Out.WriteLine(info);
+			}
+#endif
+			foreach (var o in DisplayCollection)
 			{
 				ManagementObject obj = (ManagementObject)o;
 				string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
@@ -83,7 +111,7 @@ namespace PicoGAUpdate
 								string[] version = obj["DriverVersion"].ToString().Split('.');
 								{
 									string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-									Console.WriteLine(nvidiaVersion);
+									Console.WriteLine("NVIDIA Driver v"+ nvidiaVersion);
 									currVer = nvidiaVersion;
 								}
 							}
@@ -366,13 +394,13 @@ namespace PicoGAUpdate
 #if DEBUG
 					Console.WriteLine("WinRAR = " + winRar);
 #endif
-					if (!Directory.Exists(extractPath))
+					// TODO: Optimize checks here
+					if (!File.Exists(extractPath + @"\setup.exe"))
 					{
+						Safe.DirectoryDelete(extractPath);
 						Console.WriteLine("Creating " + extractPath);
 						Directory.CreateDirectory(extractPath);
-					}
-					if (!Directory.Exists(extractPath + @"\Display.Driver"))
-					{
+
 						Process wProcess = new Process
 						{
 							StartInfo =
@@ -384,10 +412,10 @@ namespace PicoGAUpdate
 						}
 						};
 						Console.WriteLine("Extracting installer " + installerPath + "...");
-#if DEBUG
+//#if DEBUG
 						Console.WriteLine(String.Format(" % \"{0}\" {1}", wProcess.StartInfo.FileName,
 						wProcess.StartInfo.Arguments));
-#endif
+//#endif
 						// Try to create the full path just in case...
 						//Directory.CreateDirectory(@"C:\NVIDIA");
 						//Directory.CreateDirectory(@"C:\NVIDIA\DisplayDriver");
@@ -441,6 +469,9 @@ namespace PicoGAUpdate
 				string setupPath = extractPath + @"\setup.exe";
 				Process p = new Process();
 				p.StartInfo.FileName = setupPath ?? throw new ArgumentNullException(nameof(setupPath));
+#if DEBUG
+				Console.WriteLine("Installer Location: " + p.StartInfo.FileName);
+#endif
 				if (!OptionContainer.BareDriver)
 				{
 					if (OptionContainer.Silent || OptionContainer.Strip)
@@ -451,12 +482,12 @@ namespace PicoGAUpdate
 					else
 					{
 						Console.WriteLine("Running GUI Installer"
-#if DEBUB
+#if DEBUG
 						+ " from " + p.StartInfo.FileName
 #endif
 						+ "...");
 					}
-					if (!System.Diagnostics.Debugger.IsAttached)
+					//if (!System.Diagnostics.Debugger.IsAttached)
 					{
 						p.Start();
 						p.WaitForExit();
@@ -489,6 +520,7 @@ namespace PicoGAUpdate
 			// An alternative approach is to use https://stackoverflow.com/questions/38062177/is-it-possible-to-send-toast-notification-from-console-application
 			// to have the ability to send a balloon tip
 			MainProgramLoop(args);
+
 #if DEBUG
 			Console.WriteLine("Press any key to quit...");
 			Console.ReadKey();
@@ -534,14 +566,23 @@ namespace PicoGAUpdate
 #if DEBUG
 			Console.WriteLine("Elevated Process : " + CheckAdmin.IsElevated);
 #endif
-
-			bool dirty = true;
+			string currentDriverVersion = GetCurrentVersion();
+			bool dirty = false;
 			if (!OptionContainer.NoUpdate)
 			{
-				LinkItem latestDriver = GetLatestDriverVersion();
 				string downloadedFile = "";
-				// Add fallback value required for math, if driver is missing/not detected.
-				string currentDriverVersion = GetCurrentVersion();
+				// WIP Chipset updater
+				switch (GetChipsetModel())
+				{
+					case "X570":
+						// TODO: Get url
+						Console.WriteLine("Your chipset was recognized, but Chipset driver download is still a Work In Progress!");
+						break;
+					default:
+						// no-op
+						break;
+				}
+				LinkItem latestDriver = GetLatestDriverVersion();
 				// TODO: Remove need for calling StringToFloat again
 				bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
 				if (currentIsOutOfDate)
@@ -556,7 +597,7 @@ namespace PicoGAUpdate
 				{
 					Console.WriteLine("Your driver is up-to-date! Well done!");
 				}
-				if (currentIsOutOfDate || OptionContainer.ForceDownload || (OptionContainer.ForceInstall && !Directory.Exists(Path.GetTempPath() + @"DriverUpdateEX"))) ;
+				if (OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && !Directory.Exists(Path.GetTempPath() + @"DriverUpdateEX")))
 				{
 					dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, out downloadedFile);
 				}
