@@ -22,7 +22,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -44,7 +44,7 @@ namespace PicoGAUpdate
                     }
                     return false;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return false;
                 }
@@ -63,7 +63,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -82,7 +82,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -101,7 +101,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -120,7 +120,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -139,7 +139,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -158,7 +158,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -177,7 +177,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -199,7 +199,7 @@ namespace PicoGAUpdate
                     }
                     return false;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return false;
                 }
@@ -221,7 +221,7 @@ namespace PicoGAUpdate
                     }
                     return false;
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return false;
                 }
@@ -240,7 +240,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -259,7 +259,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -278,7 +278,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -297,7 +297,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -316,7 +316,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
@@ -335,7 +335,7 @@ namespace PicoGAUpdate
                     }
                     return "";
                 }
-                catch (Exception e)
+                catch (Exception)
                 {
                     return "";
                 }
