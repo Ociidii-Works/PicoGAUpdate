@@ -478,7 +478,6 @@ namespace PicoGAUpdate
             {
                 throw new Exception("Installer file does not exist!");
             }
-            StripDriver(installerPath, version);
 
             try
             {
@@ -507,8 +506,11 @@ namespace PicoGAUpdate
                     {
                         try
                         {
-                            p.Start();
-                            p.WaitForExit();
+                            if (!OptionContainer.Pretend)
+                            {
+                                p.Start();
+                                p.WaitForExit();
+                            }
                         }
                         catch (Exception e)
                         {
@@ -629,6 +631,7 @@ namespace PicoGAUpdate
                 {
                     dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, downloadedFile);
                 }
+                StripDriver(downloadedFile, latestDriver.Version);
                 if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
                 {
                     dirty = InstallDriver(downloadedFile, latestDriver.Version);

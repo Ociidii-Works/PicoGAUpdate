@@ -70,6 +70,9 @@ namespace PicoGAUpdate
             "Do not attempt to download and run a new driver package. Useful in combination with " + Clean.GetLongSwitch() +
             " or " + Strip.GetLongSwitch() + ".");
 
+        public static Option Pretend = new Option("--pretend", "-p", false,
+            "Skip running the installer. Useful for debugging or preview changes.");
+
         public static Option Help = new Option("--help", "-h", false,
             "This help text.");
 
