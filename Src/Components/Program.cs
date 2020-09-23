@@ -69,18 +69,16 @@ namespace PicoGAUpdate
 
         public static string GetChipsetModel()
         {
-#if DEBUG
-			Console.WriteLine("===== Motherboard =====");
-			Console.WriteLine("Manufacturer: " + MotherboardInfo.Manufacturer);
-			Console.WriteLine("Model: " + MotherboardInfo.Model);
-			Console.WriteLine("PNPDeviceID: " + MotherboardInfo.PNPDeviceID);
-			Console.WriteLine("Product: " + MotherboardInfo.Product);
+//#if DEBUG
+            Console.WriteLine("*    Motherboard");
+			Console.WriteLine("         Manufacturer: " + MotherboardInfo.Manufacturer);
+			Console.WriteLine("         Product: " + MotherboardInfo.Product);
 			Console.Out.Flush();
-#endif
+//#endif
             // A crude implementation until more testing is done
-            if (MotherboardInfo.Model != null)
+            if (MotherboardInfo.Product != null)
             {
-                if (MotherboardInfo.Model.Contains("X570"))
+                if (MotherboardInfo.Product.Contains("X570"))
                 {
                     return "X570";
                 }
@@ -91,7 +89,7 @@ namespace PicoGAUpdate
         // TODO: Make generic device enumerator that includes other device types
         public static string GetCurrentVersion()
         {
-            Console.Write("Checking installed Device Drivers...");
+            Console.Write("         Finding display adapters...");
             // Add fallback value required for math, if driver is missing/not detected.
             string currVer = "000.00";
 
@@ -102,7 +100,7 @@ namespace PicoGAUpdate
 #if DEBUG
 			foreach (ManagementObject obj in DisplayCollection)
 			{
-				string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
+				string info = String.Format(" {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"]);
 				Console.Out.WriteLine(info);
 			}
 #endif
@@ -553,31 +551,43 @@ namespace PicoGAUpdate
 #endif
         }
 
-        private static LinkItem GetLatestDriverVersion()
+        private static bool GetLatestDriverVersion(out LinkItem latestVersion)
         {
             // FIXME: This shouldn't run unless we have to...
-            Console.Write("Finding latest Nvidia Driver Version... ");
+            Console.Write("         Finding latest Nvidia Driver Version... ");
 
             int textEndCursorPos = Console.CursorLeft;
             WebClient w = new WebClient();
-            string s = w.DownloadString(address: WebsiteUrls.RedditSource);
-            List<LinkItem> list = new List<LinkItem>();
-
-            list = LinkFinderReddit.Find(s);
-            LinkItem latestVersion = list.FindLast(x => x.studio == OptionContainer.Studio);
-            foreach (LinkItem i in list)
+            bool success = true;
+            try
             {
-                Console.Write(i.Version);
-                // TODO: Implement specific version downloading here.
-                if (i.Version == latestVersion.Version)
+                string s = w.DownloadString(address: WebsiteUrls.RedditSource);
+                List<LinkItem> list = new List<LinkItem>();
+
+                list = LinkFinderReddit.Find(s);
+                LinkItem ver = list.FindLast(x => x.studio == OptionContainer.Studio);
+                foreach (LinkItem i in list)
                 {
-                    Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ")" + Environment.NewLine);
-                    break;
+                    Console.Write(i.Version);
+                    // TODO: Implement specific version downloading here.
+                    if (i.Version == ver.Version)
+                    {
+                        Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ")" + Environment.NewLine);
+                        break;
+                    }
+                    Console.CursorLeft = textEndCursorPos;
+                    System.Threading.Thread.Sleep(25);
                 }
-                Console.CursorLeft = textEndCursorPos;
-                System.Threading.Thread.Sleep(25);
+                latestVersion = ver;
             }
-            return latestVersion;
+            catch (Exception e)
+            {
+                Console.WriteLine(e.Message);
+                latestVersion = default;
+                success = false;
+            }
+            
+            return success;
         }
 
         private static void MainProgramLoop(string[] args)
@@ -593,7 +603,6 @@ namespace PicoGAUpdate
 #if DEBUG
 			Console.WriteLine("Elevated Process : " + CheckAdmin.IsElevated);
 #endif
-            string currentDriverVersion = GetCurrentVersion();
             bool dirty = false;
             if (!OptionContainer.NoUpdate)
             {
@@ -602,54 +611,66 @@ namespace PicoGAUpdate
                 {
                     case "X570":
                         // TODO: Get url
-                        Console.WriteLine("Your chipset was recognized, but Chipset driver download is still a Work In Progress!");
+                        Console.WriteLine("         Your chipset was recognized, but Chipset driver download is still a Work In Progress!");
                         break;
 
                     default:
                         // no-op
                         break;
                 }
-                LinkItem latestDriver = GetLatestDriverVersion();
-                // Fallback path
-                string versionS = latestDriver.Version.ToString(CultureInfo.InvariantCulture);
-                string downloadedFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-                // TODO: Remove need for calling StringToFloat again
-                bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
-                if (currentIsOutOfDate)
+                Console.WriteLine("*    Graphic Adapter(s)");
+                string currentDriverVersion = GetCurrentVersion();
+                LinkItem latestDriver;
+                bool success = GetLatestDriverVersion(out latestDriver);
+                // TODO: Make installer work without network connection
+                if (success)
                 {
-                    Console.WriteLine("A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
-                }
-                else if (OptionContainer.ForceDownload)
-                {
-                    Console.WriteLine("Downloading driver as requested.");
-                }
-                else if (!OptionContainer.ForceInstall)
-                {
-                    Console.WriteLine("Your driver is up-to-date! Well done!");
-                }
-                if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
-                {
-                    dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, downloadedFile);
-                }
-                StripDriver(downloadedFile, latestDriver.Version);
-                if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
-                {
-                    dirty = InstallDriver(downloadedFile, latestDriver.Version);
-                }
-                else
-                {
-                    // show baloon tip
-                    // Program.sTrayIcon.ShowBalloonTi
-                }
-                if (OptionContainer.DeleteDownloaded)
-                {
-                    try
+                    // Fallback path
+                    string versionS = latestDriver.Version.ToString(CultureInfo.InvariantCulture);
+                    string downloadedFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
+                    // TODO: Remove need for calling StringToFloat again
+                    bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
+                    if (currentIsOutOfDate)
                     {
-                        File.Delete(downloadedFile);
+                        Console.WriteLine("A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
                     }
-                    catch (Exception e)
+                    else if (OptionContainer.ForceDownload)
                     {
-                        Console.WriteLine(e);
+                        Console.WriteLine("Downloading driver as requested.");
+                    }
+                    else if (!OptionContainer.ForceInstall)
+                    {
+                        Console.WriteLine("Your driver is up-to-date! Well done!");
+                    }
+                    if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
+                    {
+                        dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, downloadedFile);
+                    }
+                    // TODO: Run on extracted path if present instead of relying on file version
+                    StripDriver(downloadedFile, latestDriver.Version);
+
+                    // TODO: Add ExtractDriver step
+                    // }
+                    if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
+                    {
+                        dirty = InstallDriver(downloadedFile, latestDriver.Version);
+                    }
+                    else
+                    {
+                        // show baloon tip
+                        // Program.sTrayIcon.ShowBalloonTi
+                    }
+
+                    if (OptionContainer.DeleteDownloaded)
+                    {
+                        try
+                        {
+                            File.Delete(downloadedFile);
+                        }
+                        catch (Exception e)
+                        {
+                            Console.WriteLine(e);
+                        }
                     }
                 }
                 //if (dirty && OptionContainer.Strip)
