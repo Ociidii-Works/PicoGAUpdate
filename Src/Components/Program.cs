@@ -120,7 +120,6 @@ namespace PicoGAUpdate
                                 {
                                     string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
                                     Console.Write("NVIDIA Driver v" + nvidiaVersion);
-                                    Console.WriteLine();
                                     currVer = nvidiaVersion;
                                 }
                             }
@@ -148,6 +147,7 @@ namespace PicoGAUpdate
                         break;
                 }
             }
+            Console.WriteLine();
             return currVer;
         }
 
