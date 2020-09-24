@@ -5,6 +5,7 @@ using System.Management;
 
 namespace PicoGAUpdate
 {
+    // TODO: Generalize into DeviceInfo
     static public class MotherboardInfo
     {
         private static ManagementObjectSearcher baseboardSearcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_BaseBoard");

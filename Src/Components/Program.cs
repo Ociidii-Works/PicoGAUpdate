@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Net;
+using System.Net.Http.Headers;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -87,29 +88,42 @@ namespace PicoGAUpdate
         }
 
         // TODO: Make generic device enumerator that includes other device types
-        public static string GetCurrentVersion()
+        // TODO: Make function launch downloader and installer for each device to work around having to stop at the first match
+        public static void GetCurrentVersion(out string out_vendor, out string out_version)
         {
             Console.Write("         Finding display adapters...");
             // Add fallback value required for math, if driver is missing/not detected.
-            string currVer = "000.00";
-
+            out_version = "000.00";
+            out_vendor = "";
             //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
+            //ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
+            ManagementObjectSearcher AdapterSearcher = new ManagementObjectSearcher("Select * from Win32_videocontroller");
+            ManagementObjectCollection AdapterCollection = AdapterSearcher.Get();
+
+            // TODO: Handle multiple display adapters. Needs testing.
+            // try to find devices without drivers.
+            foreach (ManagementObject obj in AdapterCollection)
+            {
+                string deviceID = obj["PNPDeviceID"].ToString();
+                string vendor = deviceID.Split('&').First().Split('\\').ElementAt(1);
+                //string info = String.Format("           {3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
+                string info = String.Format("           {0}", vendor);
+                Console.Out.WriteLine(info);
+                switch (vendor)
+                {
+                    case "VEN_10DE": // NVIDIA
+                        out_vendor = "NVIDIA";
+                        break;
+                }
+                break;
+            }
             ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
             ManagementObjectCollection DisplayCollection = DisplaySearcher.Get();
-
-#if DEBUG
-			foreach (ManagementObject obj in DisplayCollection)
-			{
-				string info = String.Format(" {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"]);
-				Console.Out.WriteLine(info);
-			}
-#endif
-            foreach (var o in DisplayCollection)
-            {
-                ManagementObject obj = (ManagementObject)o;
-                string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
-                switch (mfg)
+            foreach (var obj in DisplayCollection)
                 {
+                    string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
+                    switch (mfg)
+                    {
                     case "NVIDIA":
                         {
                             string device = obj["DeviceName"].ToString();
@@ -119,26 +133,27 @@ namespace PicoGAUpdate
                                 string[] version = obj["DriverVersion"].ToString().Split('.');
                                 {
                                     string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-                                    Console.Write("NVIDIA Driver v" + nvidiaVersion);
-                                    currVer = nvidiaVersion;
+                                    Console.WriteLine("             NVIDIA Driver v" + nvidiaVersion);
+                                    out_version = nvidiaVersion;
                                 }
                             }
+                            out_vendor = "NVIDIA";
                         }
                         break;
 
                     case "AMD":
                         {
                             string device = obj["DeviceName"].ToString();
-                            Console.WriteLine("Found AMD device '" + device + "'");
-                            Console.WriteLine("Sorry, support for AMD graphic cards is not currently implemented.");
+                            Console.WriteLine("         Found AMD device '" + device + "'");
+                            Console.WriteLine("             Sorry, support for AMD graphic cards is not currently implemented.");
                         }
                         break;
 
                     case "INTEL":
                         {
                             string device = obj["DeviceName"].ToString();
-                            Console.WriteLine("Found Intel device '" + device + "'");
-                            Console.WriteLine("Sorry, support for Intel graphic cards is not currently implemented.");
+                            Console.WriteLine("         Found Intel device '" + device + "'");
+                            Console.WriteLine("             Sorry, support for Intel graphic cards is not currently implemented.");
                         }
                         break;
 
@@ -146,10 +161,9 @@ namespace PicoGAUpdate
                         // do nothing
                         break;
                 }
+                break;
             }
-            Console.WriteLine();
-            return currVer;
-        }
+    }
 
         public static void RollingOutput(string data, bool clearRestOfLine = false)
         {
@@ -549,12 +563,13 @@ namespace PicoGAUpdate
 			Console.WriteLine("Press any key to quit...");
 			Console.ReadKey();
 #endif
+            Console.WriteLine();
         }
 
         private static bool GetLatestDriverVersion(out LinkItem latestVersion)
         {
             // FIXME: This shouldn't run unless we have to...
-            Console.Write("         Finding latest Nvidia Driver Version... ");
+            Console.Write("                 Finding latest Driver Version... ");
 
             int textEndCursorPos = Console.CursorLeft;
             WebClient w = new WebClient();
@@ -619,9 +634,9 @@ namespace PicoGAUpdate
                         break;
                 }
                 Console.WriteLine("*    Graphic Adapter(s)");
-                string currentDriverVersion = GetCurrentVersion();
-                LinkItem latestDriver;
-                bool success = GetLatestDriverVersion(out latestDriver);
+                // TODOL Deprecate this code path and chain-load download and installation inside getCurrentVersion (and rename it...)
+                GetCurrentVersion(out string currentDriverVendor, out string currentDriverVersion);
+                bool success = GetLatestDriverVersion(out LinkItem latestDriver);
                 // TODO: Make installer work without network connection
                 if (success)
                 {
@@ -632,26 +647,26 @@ namespace PicoGAUpdate
                     bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
                     if (currentIsOutOfDate)
                     {
-                        Console.WriteLine("A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
+                        Console.WriteLine("             A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
                     }
                     else if (OptionContainer.ForceDownload)
                     {
-                        Console.WriteLine("Downloading driver as requested.");
+                        Console.WriteLine("         Downloading driver as requested.");
                     }
                     else if (!OptionContainer.ForceInstall)
                     {
-                        Console.WriteLine("Your driver is up-to-date! Well done!");
+                        Console.WriteLine("                 Your driver is up-to-date! Well done!");
                     }
                     if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
                     {
                         dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, downloadedFile);
                     }
-                    // TODO: Run on extracted path if present instead of relying on file version
+                    if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
                     StripDriver(downloadedFile, latestDriver.Version);
 
                     // TODO: Add ExtractDriver step
                     // }
-                    if (OptionContainer.ForceInstall || (dirty && !OptionContainer.DownloadOnly))
+                    if ((OptionContainer.ForceInstall || currentIsOutOfDate) && !OptionContainer.DownloadOnly)
                     {
                         dirty = InstallDriver(downloadedFile, latestDriver.Version);
                     }
