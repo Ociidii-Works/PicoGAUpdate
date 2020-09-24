@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     // TODO: Re-work how this is stored to allow creation via e.g. LinkItem(427.24), and string variant with included parser
     public struct LinkItem
@@ -128,7 +128,7 @@ namespace PicoGAUpdate
                                 }
                                 // Extra url bits for special snowflake download urls
                                 string extra = "";
-                                float newver = Program.StringToFloat(t);
+                                float newver = PicoGAUpdate.Program.StringToFloat(t);
                                 if (newver > 0)
                                 {
                                     if (newver.Equals(436.02f))

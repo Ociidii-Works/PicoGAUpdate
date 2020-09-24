@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     public static class Extensions
     {
@@ -181,7 +181,7 @@ namespace PicoGAUpdate
             private string GetPaddedHelpText()
             {
                 string thisline = " " + GetShortSwitch() + ", " + GetLongSwitch();
-                string paddedline = Program.AutoPad2(thisline, 25);
+                string paddedline = PicoGAUpdate.Program.AutoPad2(thisline, 25);
                 string ht = HelpText;
                 int newlen = paddedline.Length + ht.Length;
                 // TODO: use WHILE() to split very long help text and re-assign ht inside loop to run until it fits
@@ -189,10 +189,10 @@ namespace PicoGAUpdate
                 {
                     string[] split = ht.SplitAt(-5 + Math.Abs((Console.BufferWidth) - newlen + ht.Length));
                     // TODO: Split to previous word
-                    ht = split[0] + Environment.NewLine + Program.AutoPad2("", 25) + split[1];
+                    ht = split[0] + Environment.NewLine + PicoGAUpdate.Program.AutoPad2("", 25) + split[1];
                 }
 
-                return Program.AutoPad(thisline, 25) + ht + Environment.NewLine;
+                return PicoGAUpdate.Program.AutoPad(thisline, 25) + ht + Environment.NewLine;
             }
 
             public static void PrintHelp()

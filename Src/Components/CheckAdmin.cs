@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Security.Principal;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     internal class CheckAdmin
     {

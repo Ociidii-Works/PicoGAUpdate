@@ -2,8 +2,8 @@
 using System.ComponentModel;
 using System.IO;
 using System.Net;
-
-namespace PicoGAUpdate
+using PicoGAUpdate;
+namespace PicoGAUpdate.Components
 {
     public class NewDownloader
     {
@@ -45,7 +45,7 @@ namespace PicoGAUpdate
             }
             Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
-            Program.DownloadDone = false;
+            PicoGAUpdate.Program.DownloadDone = false;
             using (_wc = new WebClient())
             {
                 _wc.DownloadProgressChanged += wc_DownloadProgressChanged;
@@ -97,7 +97,7 @@ namespace PicoGAUpdate
                         totalDLSize = (e.TotalBytesToReceive / 1024 / 1024);
                     }
                     long currentDLSize = (e.BytesReceived / 1024 / 1024);
-                    Program.RollingOutput(e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDLSize
+                    PicoGAUpdate.Program.RollingOutput(e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDLSize
                         + AutoSpacer(currentDLSize) + "MB / " +
                                           totalDLSize + " MB");
                     _printing = false;
@@ -113,23 +113,23 @@ namespace PicoGAUpdate
 
             if (e != null && e.Cancelled)
             {
-                Program.RollingOutput("The download has been cancelled", true);
+                PicoGAUpdate.Program.RollingOutput("The download has been cancelled", true);
                 DownloadCancelled = true;
             }
             else if (e != null && e.Error != null) // We have an error! Retry a few times, then abort.
             {
-                Program.RollingOutput("An error ocurred while trying to download file", true);
+                PicoGAUpdate.Program.RollingOutput("An error ocurred while trying to download file", true);
             }
             else
             {
-                Program.RollingOutput("File succesfully downloaded", true);
+                PicoGAUpdate.Program.RollingOutput("File succesfully downloaded", true);
                 Success = true;
             }
 
             // For RollingOutput needs
             Console.WriteLine();
             Console.CursorVisible = true;
-            Program.DownloadDone = true;
+            PicoGAUpdate.Program.DownloadDone = true;
         }
     }
 }

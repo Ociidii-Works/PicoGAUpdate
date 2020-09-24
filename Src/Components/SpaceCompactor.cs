@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     internal static class SpaceCompactor
     {

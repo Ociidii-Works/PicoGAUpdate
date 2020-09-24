@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     internal static class Safe
     {
@@ -43,7 +43,7 @@ namespace PicoGAUpdate
             {
                 // We said silently.
                 Console.WriteLine("Something went wrong deleting " + targetDir + ":" + Environment.NewLine + ex);
-                Program.ExitImmediately = false;
+                PicoGAUpdate.Program.ExitImmediately = false;
             }
         }
     }

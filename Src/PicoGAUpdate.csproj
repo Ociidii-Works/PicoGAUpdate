@@ -12,6 +12,7 @@
     <FileAlignment>512</FileAlignment>
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
+    <Nullable>disable</Nullable>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>x64</PlatformTarget>
@@ -73,7 +74,7 @@
     <Compile Include="Components\Safe.IO.cs" />
     <Compile Include="Components\SpaceCompactor.cs" />
     <Compile Include="Components\Stripper.cs" />
-    <Compile Include="Components\Program.cs" />
+    <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Components\app.manifest" />

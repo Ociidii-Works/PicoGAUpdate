@@ -1,11 +1,8 @@
-﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
+﻿using System;
 using System.Diagnostics;
 using System.IO;
-using System.Management;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     static partial class Program
     {

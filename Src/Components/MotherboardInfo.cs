@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Management;
 
-namespace PicoGAUpdate
+namespace PicoGAUpdate.Components
 {
     // TODO: Generalize into DeviceInfo
     static public class MotherboardInfo
