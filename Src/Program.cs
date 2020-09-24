@@ -225,7 +225,7 @@ namespace PicoGAUpdate
 
                 try
                 {
-                    float.TryParse(input ?? throw new ArgumentNullException(nameof(input)),
+                    float.TryParse(input,
                         NumberStyles.Currency, ci, out version);
                 }
                 catch (FormatException)
@@ -469,7 +469,6 @@ namespace PicoGAUpdate
 
         public static bool InstallDriver(string installerPath, string version)
         {
-            bool dirty = false;
             if ((string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath)) && !Directory.Exists(NvidiaExtractedPath))
             {
                 throw new Exception("Installer file does not exist!");
@@ -479,7 +478,7 @@ namespace PicoGAUpdate
             {
                 string setupPath = NvidiaExtractedPath + @"\setup.exe";
                 Process p = new Process();
-                p.StartInfo.FileName = setupPath ?? throw new ArgumentNullException(nameof(setupPath));
+                p.StartInfo.FileName = setupPath;
 #if DEBUG
 				Console.WriteLine("Installer Location: " + p.StartInfo.FileName);
 #endif
@@ -515,13 +514,12 @@ namespace PicoGAUpdate
                 if (OptionContainer.DeleteDownloaded)
                 {
                     Safe.DirectoryDelete(NvidiaExtractedPath);
-                    File.Delete(installerPath);
+                    File.Delete(installerPath ?? throw new ArgumentNullException(nameof(installerPath)));
                 }
-                dirty = true;
             }
 
             ExitImmediately = true;
-            return dirty;
+            return true;
         }
 
         private static void Main(string[] args)
@@ -603,6 +601,7 @@ namespace PicoGAUpdate
                 }
                 Console.WriteLine("*    Graphic Adapter(s)");
                 // TODOL Deprecate this code path and chain-load download and installation inside getCurrentVersion (and rename it...)
+                // ReSharper disable once UnusedVariable
                 GetCurrentVersion(out string currentDriverVendor, out string currentDriverVersion);
                 bool success = GetLatestDriverVersion(out LinkItem latestDriver);
                 // TODO: Make installer work without network connection
