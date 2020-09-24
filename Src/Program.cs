@@ -548,6 +548,7 @@ namespace PicoGAUpdate
             try
             {
                 string s = w.DownloadString(address: WebsiteUrls.RedditSource);
+                // ReSharper disable once RedundantAssignment
                 List<LinkItem> list = new List<LinkItem>();
 
                 list = LinkFinderReddit.Find(s);
