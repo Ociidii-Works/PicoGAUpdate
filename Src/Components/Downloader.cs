@@ -45,7 +45,7 @@ namespace PicoGAUpdate.Components
             }
             Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
-            PicoGAUpdate.Program.DownloadDone = false;
+            Program.DownloadDone = false;
             using (_wc = new WebClient())
             {
                 _wc.DownloadProgressChanged += wc_DownloadProgressChanged;
@@ -97,7 +97,7 @@ namespace PicoGAUpdate.Components
                         _totalDlSize = (e.TotalBytesToReceive / 1024 / 1024);
                     }
                     long currentDlSize = (e.BytesReceived / 1024 / 1024);
-                    PicoGAUpdate.Program.RollingOutput("                " + e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDlSize
+                    Program.RollingOutput("                " + e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDlSize
                         + AutoSpacer(currentDlSize) + "MB / " +
                                           _totalDlSize + " MB");
                     _printing = false;
@@ -113,23 +113,23 @@ namespace PicoGAUpdate.Components
 
             if (e != null && e.Cancelled)
             {
-                PicoGAUpdate.Program.RollingOutput("The download has been cancelled", true);
+                Program.RollingOutput("The download has been cancelled", true);
                 DownloadCancelled = true;
             }
             else if (e != null && e.Error != null) // We have an error! Retry a few times, then abort.
             {
-                PicoGAUpdate.Program.RollingOutput("An error ocurred while trying to download file", true);
+                Program.RollingOutput("An error ocurred while trying to download file", true);
             }
             else
             {
-                PicoGAUpdate.Program.RollingOutput("File succesfully downloaded", true);
+                Program.RollingOutput("File succesfully downloaded", true);
                 Success = true;
             }
 
             // For RollingOutput needs
             Console.WriteLine();
             Console.CursorVisible = true;
-            PicoGAUpdate.Program.DownloadDone = true;
+            Program.DownloadDone = true;
         }
     }
 }

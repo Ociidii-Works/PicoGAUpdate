@@ -85,7 +85,7 @@ namespace PicoGAUpdate.Components
             {
                 if (ReferenceEquals(null, obj)) return false;
                 if (ReferenceEquals(this, obj)) return true;
-                if (obj.GetType() != this.GetType()) return false;
+                if (obj.GetType() != GetType()) return false;
                 return Equals((Option)obj);
             }
 
@@ -96,6 +96,7 @@ namespace PicoGAUpdate.Components
 
             public override int GetHashCode()
             {
+                // ReSharper disable once NonReadonlyMemberInGetHashCode
                 return CurrentValue.GetHashCode();
             }
 
@@ -129,7 +130,7 @@ namespace PicoGAUpdate.Components
             }
             public bool Is(Option other)
             {
-                return this.LongSwitch.Equals(other.LongSwitch);
+                return LongSwitch.Equals(other.LongSwitch);
             }
 
             // TODO: Make this the implicit getter thingy
@@ -181,7 +182,7 @@ namespace PicoGAUpdate.Components
             private string GetPaddedHelpText()
             {
                 string thisline = " " + GetShortSwitch() + ", " + GetLongSwitch();
-                string paddedline = PicoGAUpdate.Program.AutoPad2(thisline, 25);
+                string paddedline = Program.AutoPad2(thisline, 25);
                 string ht = HelpText;
                 int newlen = paddedline.Length + ht.Length;
                 // TODO: use WHILE() to split very long help text and re-assign ht inside loop to run until it fits
@@ -189,10 +190,10 @@ namespace PicoGAUpdate.Components
                 {
                     string[] split = ht.SplitAt(-5 + Math.Abs((Console.BufferWidth) - newlen + ht.Length));
                     // TODO: Split to previous word
-                    ht = split[0] + Environment.NewLine + PicoGAUpdate.Program.AutoPad2("", 25) + split[1];
+                    ht = split[0] + Environment.NewLine + Program.AutoPad2("", 25) + split[1];
                 }
 
-                return PicoGAUpdate.Program.AutoPad(thisline, 25) + ht + Environment.NewLine;
+                return Program.AutoPad(thisline, 25) + ht + Environment.NewLine;
             }
 
             public static void PrintHelp()
@@ -215,7 +216,7 @@ namespace PicoGAUpdate.Components
                         foreach (var arg in args.ToArray())
                         {
                             //Console.WriteLine("Processing switch " + arg);
-                            if (arg.Equals(OptionContainer.Help.GetShortSwitch()) || arg.Equals(OptionContainer.Help.GetLongSwitch()) || arg.Equals("/?"))
+                            if (arg.Equals(Help.GetShortSwitch()) || arg.Equals(Help.GetLongSwitch()) || arg.Equals("/?"))
                             {
                                 PrintHelp();
                                 Environment.Exit(2);
@@ -235,8 +236,8 @@ namespace PicoGAUpdate.Components
                     else
                     {
                         // Console.WriteLine("No arguments given, using defaults");
-                        OptionContainer.Strip.SetValue(false);
-                        OptionContainer.Silent.SetValue(true);
+                        Strip.SetValue(false);
+                        Silent.SetValue(true);
                     }
                 }
                 

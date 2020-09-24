@@ -131,7 +131,7 @@ namespace PicoGAUpdate.Components
                                 }
                                 // Extra url bits for special snowflake download urls
                                 string extra = "";
-                                float newver = PicoGAUpdate.Program.StringToFloat(t);
+                                float newver = Program.StringToFloat(t);
                                 if (newver > 0)
                                 {
                                     if (newver.Equals(436.02f))
@@ -152,6 +152,7 @@ namespace PicoGAUpdate.Components
                                 Console.WriteLine("Adding '" + t + "' (" + i.Href + ")");
 #endif
                                 i.DownloadUrl = String.Format(
+                                    // ReSharper disable once FormatStringProblem
                                     "http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql{2}.exe",
                                     i.Version, i.DriverType == DriverTypes.Studio ? "nsd-" : "", extra);
 #if DEBUG

@@ -43,7 +43,7 @@ namespace PicoGAUpdate.Components
             {
                 // We said silently.
                 Console.WriteLine("Something went wrong deleting " + targetDir + ":" + Environment.NewLine + ex);
-                PicoGAUpdate.Program.ExitImmediately = false;
+                Program.ExitImmediately = false;
             }
         }
     }
