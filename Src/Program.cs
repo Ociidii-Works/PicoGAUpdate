@@ -580,14 +580,14 @@ namespace PicoGAUpdate
                 List<LinkItem> list = new List<LinkItem>();
 
                 list = LinkFinderReddit.Find(s);
-                LinkItem ver = list.FindLast(x => x.studio == OptionContainer.Studio);
+                LinkItem ver = list.FindLast(x => x.DriverType == OptionContainer.Studio);
                 foreach (LinkItem i in list)
                 {
                     Console.Write(i.Version);
                     // TODO: Implement specific version downloading here.
                     if (i.Version == ver.Version)
                     {
-                        Console.Write(" (" + (i.studio ? "Studio" : "GameReady") + ")" + Environment.NewLine);
+                        Console.Write(" (" + (i.DriverType ? "Studio" : "GameReady") + ")" + Environment.NewLine);
                         break;
                     }
                     Console.CursorLeft = textEndCursorPos;
@@ -659,7 +659,7 @@ namespace PicoGAUpdate
                     }
                     if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
                     {
-                        dirty = DownloadDriver(latestDriver.dlurl, latestDriver.Version, downloadedFile);
+                        dirty = DownloadDriver(latestDriver.DownloadUrl, latestDriver.Version, downloadedFile);
                     }
                     if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
                     StripDriver(downloadedFile, latestDriver.Version);

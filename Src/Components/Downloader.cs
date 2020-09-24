@@ -2,7 +2,7 @@
 using System.ComponentModel;
 using System.IO;
 using System.Net;
-using PicoGAUpdate;
+
 namespace PicoGAUpdate.Components
 {
     public class NewDownloader
@@ -10,7 +10,7 @@ namespace PicoGAUpdate.Components
         public static bool Success;
         public static bool DownloadCancelled;
         private static WebClient _wc;
-        private static long totalDLSize = 0;
+        private static long _totalDlSize;
 
         private bool _printing;
 
@@ -92,14 +92,14 @@ namespace PicoGAUpdate.Components
             {
                 if (e != null)
                 {
-                    if (totalDLSize == 0)
+                    if (_totalDlSize == 0)
                     {
-                        totalDLSize = (e.TotalBytesToReceive / 1024 / 1024);
+                        _totalDlSize = (e.TotalBytesToReceive / 1024 / 1024);
                     }
-                    long currentDLSize = (e.BytesReceived / 1024 / 1024);
-                    PicoGAUpdate.Program.RollingOutput(e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDLSize
-                        + AutoSpacer(currentDLSize) + "MB / " +
-                                          totalDLSize + " MB");
+                    long currentDlSize = (e.BytesReceived / 1024 / 1024);
+                    PicoGAUpdate.Program.RollingOutput(e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDlSize
+                        + AutoSpacer(currentDlSize) + "MB / " +
+                                          _totalDlSize + " MB");
                     _printing = false;
                 }
 

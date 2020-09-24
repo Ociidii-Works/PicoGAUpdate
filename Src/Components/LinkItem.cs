@@ -5,13 +5,18 @@ using System.Text.RegularExpressions;
 
 namespace PicoGAUpdate.Components
 {
+    public static class DriverTypes
+    {
+        public const bool GameReady = false;
+        public const bool Studio = true;
+    }
     // TODO: Re-work how this is stored to allow creation via e.g. LinkItem(427.24), and string variant with included parser
     public struct LinkItem
     {
         public string Href;
         public string Version;
-        public bool studio;
-        public string dlurl;
+        public bool DriverType;
+        public string DownloadUrl;
 
          public override string ToString()
         {
@@ -51,8 +56,6 @@ namespace PicoGAUpdate.Components
                     i.Href = m2.Groups[1].Value;
 
                     // match driver thread format
-                    /// Fucking h00mans!
-                    /// /r/nvidia/comments/95chif/geforce_hotfix_driver_39886/
                     Match m3 = Regex.Match(i.Href, @"^(https://(www|old).reddit.com)?/r/nvidia/comments/",
                     //Match m3 = Regex.Match(i.Href, @"^/r/nvidia/comments/(.*?)/(geforce_hotfix_driver_(.*?)|driver_(.*?)_faq)",
                         RegexOptions.Singleline);
@@ -68,8 +71,8 @@ namespace PicoGAUpdate.Components
                             // 4.
                             // Remove inner tags from text.
                             string t = Regex.Replace(value, @"\s*<.*?>\s*", "", RegexOptions.Singleline).ToLowerInvariant();
-                            t.Replace(Environment.NewLine,"");
-                            t.Replace("\t","");
+                            t = t.Replace(Environment.NewLine,"");
+                            t = t.Replace("\t","");
                             if (t == "")
                             {
                                 continue;
@@ -110,7 +113,7 @@ namespace PicoGAUpdate.Components
 //#endif
                                 if (t.Contains("studio"))
                                 {
-                                    i.studio = true;
+                                    i.DriverType = DriverTypes.Studio;
                                 }
                                 t = t.Replace("studio ", "");
 //#if DEBUG
@@ -148,9 +151,11 @@ namespace PicoGAUpdate.Components
 #if DEBUG
                                 Console.WriteLine("Adding '" + t + "' (" + i.Href + ")");
 #endif
-                                i.dlurl = String.Format("http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql{2}.exe", i.Version, i.studio ? "nsd-" : "",extra);
+                                i.DownloadUrl = String.Format(
+                                    "http://us.download.nvidia.com/Windows/{0}/{0:#.##}-desktop-win10-64bit-international-{1}whql{2}.exe",
+                                    i.Version, i.DriverType == DriverTypes.Studio ? "nsd-" : "", extra);
 #if DEBUG
-                                Console.WriteLine("URL: " + i.dlurl);
+                                Console.WriteLine("URL: " + i.DownloadUrl);
 #endif
                                 if (list.FindIndex(x => x.Version == i.Version) == -1)
                                 {
