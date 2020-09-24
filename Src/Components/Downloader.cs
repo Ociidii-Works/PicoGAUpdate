@@ -97,7 +97,7 @@ namespace PicoGAUpdate.Components
                         _totalDlSize = (e.TotalBytesToReceive / 1024 / 1024);
                     }
                     long currentDlSize = (e.BytesReceived / 1024 / 1024);
-                    PicoGAUpdate.Program.RollingOutput(e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDlSize
+                    PicoGAUpdate.Program.RollingOutput("                " + e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDlSize
                         + AutoSpacer(currentDlSize) + "MB / " +
                                           _totalDlSize + " MB");
                     _printing = false;

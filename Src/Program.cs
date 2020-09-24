@@ -316,7 +316,7 @@ namespace PicoGAUpdate
             if (File.Exists(destination) && !(OptionContainer.ForceDownload))
             {
                 //#if DEBUG
-                Console.WriteLine("Using Existing installer at " + destination);
+                Console.WriteLine("            Using Existing installer at " + destination);
                 //#endif
                 DownloadDone = true;
                 NewDownloader.Success = true;
@@ -324,7 +324,7 @@ namespace PicoGAUpdate
             }
             else
             {
-                Console.WriteLine("Downloading Driver version " + version
+                Console.WriteLine("                Downloading Driver version " + version
 #if DEBUG
 					+ " from " + url + Environment.NewLine + "to " + destination
 #endif
@@ -569,7 +569,7 @@ namespace PicoGAUpdate
         private static bool GetLatestDriverVersion(out LinkItem latestVersion)
         {
             // FIXME: This shouldn't run unless we have to...
-            Console.Write("                 Finding latest Driver Version... ");
+            Console.Write("                Finding latest Driver Version... ");
 
             int textEndCursorPos = Console.CursorLeft;
             WebClient w = new WebClient();
@@ -642,33 +642,41 @@ namespace PicoGAUpdate
                 {
                     // Fallback path
                     string versionS = latestDriver.Version.ToString(CultureInfo.InvariantCulture);
-                    string downloadedFile = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
+                    string InstallerPackageDestination = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
                     // TODO: Remove need for calling StringToFloat again
                     bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
                     if (currentIsOutOfDate)
                     {
-                        Console.WriteLine("             A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
+                        Console.WriteLine("                A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
                     }
                     else if (OptionContainer.ForceDownload)
                     {
-                        Console.WriteLine("         Downloading driver as requested.");
+                        Console.WriteLine("             Downloading driver as requested.");
                     }
                     else if (!OptionContainer.ForceInstall)
                     {
-                        Console.WriteLine("                 Your driver is up-to-date! Well done!");
+                        Console.WriteLine("                Your driver is up-to-date! Well done!");
                     }
-                    if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
+                    // TODO: Handle missing file inside the proper function to allow different vendors and partial recovery from missing file instead of downloading everything for no reason
+                    //if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
+                    bool do_download = OptionContainer.ForceDownload || currentIsOutOfDate ||
+                                                                         (OptionContainer.ForceInstall &&
+                                                                          (!File.Exists(NvidiaExtractedPath + @"\" +
+                                                                               "setup.exe") &&
+                                                                           !File.Exists(InstallerPackageDestination)));
+                    //if (OptionContainer.ForceDownload || !File.Exists(InstallerPackageDestination) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
+                    if(do_download)
                     {
-                        dirty = DownloadDriver(latestDriver.DownloadUrl, latestDriver.Version, downloadedFile);
+                        dirty = DownloadDriver(latestDriver.DownloadUrl, latestDriver.Version, InstallerPackageDestination);
                     }
                     if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
-                    StripDriver(downloadedFile, latestDriver.Version);
+                    StripDriver(InstallerPackageDestination, latestDriver.Version);
 
                     // TODO: Add ExtractDriver step
                     // }
                     if ((OptionContainer.ForceInstall || currentIsOutOfDate) && !OptionContainer.DownloadOnly)
                     {
-                        dirty = InstallDriver(downloadedFile, latestDriver.Version);
+                        dirty = InstallDriver(InstallerPackageDestination, latestDriver.Version);
                     }
                     else
                     {
@@ -680,7 +688,7 @@ namespace PicoGAUpdate
                     {
                         try
                         {
-                            File.Delete(downloadedFile);
+                            File.Delete(InstallerPackageDestination);
                         }
                         catch (Exception e)
                         {
