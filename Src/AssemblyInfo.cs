@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("PicoGAUpdate")]
-[assembly: AssemblyCopyright("Copyright © 2018 XenHat")]
+[assembly: AssemblyCopyright("Copyright © 2018-2020 XenHat")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

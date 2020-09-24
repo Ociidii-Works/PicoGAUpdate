@@ -64,7 +64,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Components\AssemblyInfo.cs" />
+    <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Components\CheckAdmin.cs" />
     <Compile Include="Components\Downloader.cs" />
     <Compile Include="Components\LinkItem.cs" />
