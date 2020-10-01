@@ -545,11 +545,11 @@ namespace PicoGAUpdate
             // An alternative approach is to use https://stackoverflow.com/questions/38062177/is-it-possible-to-send-toast-notification-from-console-application
             // to have the ability to send a balloon tip
             MainProgramLoop();
-
-#if DEBUG
-			Console.WriteLine("Press any key to quit...");
-			Console.ReadKey();
-#endif
+            if(!ExitImmediately)
+            {
+                Console.WriteLine("Press any key to quit...");
+                Console.ReadKey();
+            }
             Console.WriteLine();
         }
 
