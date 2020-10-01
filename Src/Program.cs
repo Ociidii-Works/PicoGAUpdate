@@ -97,29 +97,14 @@ namespace PicoGAUpdate
             out_vendor = "";
             //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
             //ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
-            ManagementObjectSearcher AdapterSearcher = new ManagementObjectSearcher("Select * from Win32_videocontroller");
+            ManagementObjectSearcher AdapterSearcher =
+                new ManagementObjectSearcher("Select * from Win32_videocontroller");
             ManagementObjectCollection AdapterCollection = AdapterSearcher.Get();
 
+            bool found = false;
             // TODO: Handle multiple display adapters. Needs testing.
-            // try to find devices without drivers.
-            foreach (var o in AdapterCollection)
-            {
-                var obj = (ManagementObject)o;
-                string deviceID = obj["PNPDeviceID"].ToString();
-                string vendor = deviceID.Split('&').First().Split('\\').ElementAt(1);
-                //string info = String.Format("           {3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
-                string info = String.Format("           {0}", vendor);
-                Console.Out.WriteLine(info);
-                switch (vendor)
-                {
-                    case "VEN_10DE": // NVIDIA
-                        out_vendor = "NVIDIA";
-                        break;
-                }
-                break;
-            }
-            #if OLD_METHOD
-            ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
+            ManagementObjectSearcher DisplaySearcher =
+                new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
             ManagementObjectCollection DisplayCollection = DisplaySearcher.Get();
             foreach (var obj in DisplayCollection)
             {
@@ -127,41 +112,70 @@ namespace PicoGAUpdate
                 switch (mfg)
                 {
                     case "NVIDIA":
+                    {
+                        string device = obj["DeviceName"].ToString();
+                        if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") ||
+                             device.Contains("Tesla")))
                         {
-                            string device = obj["DeviceName"].ToString();
-                            if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") || device.Contains("Tesla")))
+                            // Rebuild version according to the nvidia format
+                            string[] version = obj["DriverVersion"].ToString().Split('.');
                             {
-                                // Rebuild version according to the nvidia format
-                                string[] version = obj["DriverVersion"].ToString().Split('.');
-                                {
-                                    string nvidiaVersion = ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3, ".");
-                                    Console.WriteLine("             NVIDIA Driver v" + nvidiaVersion);
-                                    out_version = nvidiaVersion;
-                                }
+                                string nvidiaVersion =
+                                    ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3,
+                                        ".");
+                                Console.WriteLine("             NVIDIA Driver v" + nvidiaVersion);
+                                out_version = nvidiaVersion;
+                                found = true;
                             }
-                            out_vendor = "NVIDIA";
                         }
+
+                        out_vendor = "NVIDIA";
+                    }
                         break;
 
                     case "AMD":
-                        {
-                            string device = obj["DeviceName"].ToString();
-                            Console.WriteLine("         Found AMD device '" + device + "'");
-                            Console.WriteLine("             Sorry, support for AMD graphic cards is not currently implemented.");
-                        }
+                    {
+                        string device = obj["DeviceName"].ToString();
+                        Console.WriteLine("         Found AMD device '" + device + "'");
+                        Console.WriteLine(
+                            "             Sorry, support for AMD graphic cards is not currently implemented.");
+                    }
                         break;
 
                     case "INTEL":
-                        {
-                            string device = obj["DeviceName"].ToString();
-                            Console.WriteLine("         Found Intel device '" + device + "'");
-                            Console.WriteLine("             Sorry, support for Intel graphic cards is not currently implemented.");
-                        }
+                    {
+                        string device = obj["DeviceName"].ToString();
+                        Console.WriteLine("         Found Intel device '" + device + "'");
+                        Console.WriteLine(
+                            "             Sorry, support for Intel graphic cards is not currently implemented.");
+                    }
                         break;
                 }
+
                 break;
             }
-#endif
+
+            if (!found)
+            {
+                // try to find devices without drivers.
+                foreach (var o in AdapterCollection)
+                {
+                    var obj = (ManagementObject) o;
+                    string deviceID = obj["PNPDeviceID"].ToString();
+                    string vendor = deviceID.Split('&').First().Split('\\').ElementAt(1);
+                    //string info = String.Format("           {3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
+                    string info = String.Format("           {0}", vendor);
+                    Console.Out.WriteLine(info);
+                    switch (vendor)
+                    {
+                        case "VEN_10DE": // NVIDIA
+                            out_vendor = "NVIDIA";
+                            break;
+                    }
+
+                    break;
+                }
+            }
         }
 
         public static void RollingOutput(string data, bool clearRestOfLine = false)
