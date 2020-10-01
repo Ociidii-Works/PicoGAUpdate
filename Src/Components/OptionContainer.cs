@@ -136,12 +136,12 @@ namespace PicoGAUpdate.Components
             // TODO: Make this the implicit getter thingy
             public static bool operator ==(Option value1, bool valuebool)
             {
-                return value1.GetValue();
+                return value1 != null && value1.GetValue();
             }
 
             public static bool operator !=(Option value1, bool valuebool)
             {
-                return !value1.GetValue();
+                return value1 != null && !value1.GetValue();
             }
 
             public static bool IsDefault(Option value1)

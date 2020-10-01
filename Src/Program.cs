@@ -571,15 +571,12 @@ namespace PicoGAUpdate
                 LinkItem ver = list.FindLast(x => x.DriverType == OptionContainer.Studio);
                 foreach (LinkItem i in list)
                 {
-                    Console.Write(i.Version);
                     // TODO: Implement specific version downloading here.
                     if (i.Version == ver.Version)
                     {
-                        Console.Write(" (" + (i.DriverType ? "Studio" : "GameReady") + ")" + Environment.NewLine);
+                        Console.Write(i.Version + " (" + (i.DriverType ? "Studio" : "GameReady") + ")" + Environment.NewLine);
                         break;
                     }
-                    Console.CursorLeft = textEndCursorPos;
-                    System.Threading.Thread.Sleep(25);
                 }
                 latestVersion = ver;
             }
