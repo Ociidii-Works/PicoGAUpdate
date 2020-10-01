@@ -17,7 +17,7 @@ namespace PicoGAUpdate
 {
     static class Program
     {
-        public static readonly string NvidiaExtractedPath = Path.GetTempPath() + @"DriverUpdateEX";
+        public static readonly string NvidiaExtractedPath = Path.GetTempPath() + @"DriverUpdateEXNvidia";
 
         public static readonly IList<String> NvidiaCoreComponents = new ReadOnlyCollection<string>(new List<String> {
                             "Display.Driver",
@@ -104,7 +104,7 @@ namespace PicoGAUpdate
             // try to find devices without drivers.
             foreach (var o in AdapterCollection)
             {
-                var obj = (ManagementObject) o;
+                var obj = (ManagementObject)o;
                 string deviceID = obj["PNPDeviceID"].ToString();
                 string vendor = deviceID.Split('&').First().Split('\\').ElementAt(1);
                 //string info = String.Format("           {3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
@@ -118,13 +118,14 @@ namespace PicoGAUpdate
                 }
                 break;
             }
+            #if OLD_METHOD
             ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
             ManagementObjectCollection DisplayCollection = DisplaySearcher.Get();
             foreach (var obj in DisplayCollection)
+            {
+                string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
+                switch (mfg)
                 {
-                    string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
-                    switch (mfg)
-                    {
                     case "NVIDIA":
                         {
                             string device = obj["DeviceName"].ToString();
@@ -157,10 +158,11 @@ namespace PicoGAUpdate
                             Console.WriteLine("             Sorry, support for Intel graphic cards is not currently implemented.");
                         }
                         break;
-                    }
+                }
                 break;
             }
-    }
+#endif
+        }
 
         public static void RollingOutput(string data, bool clearRestOfLine = false)
         {
