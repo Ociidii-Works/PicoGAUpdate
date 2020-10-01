@@ -7,9 +7,13 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Net;
+using System.Web;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using PicoGAUpdate.Components;
 
 namespace PicoGAUpdate
@@ -553,6 +557,13 @@ namespace PicoGAUpdate
             Console.WriteLine();
         }
 
+        public static bool IsExpired(string filename, int hours)
+        {
+            var threshold = DateTime.Now.AddHours(hours);
+            var time = System.IO.File.GetCreationTime(filename);
+            return time >= threshold;
+        }
+        
         private static bool GetLatestDriverVersion(out LinkItem latestVersion)
         {
             // FIXME: This shouldn't run unless we have to...
@@ -561,6 +572,7 @@ namespace PicoGAUpdate
             int textEndCursorPos = Console.CursorLeft;
             WebClient w = new WebClient();
             bool success = true;
+            #if OLD_DOWNLOADER
             try
             {
                 string s = w.DownloadString(address: WebsiteUrls.RedditSource);
@@ -586,10 +598,61 @@ namespace PicoGAUpdate
                 latestVersion = default;
                 success = false;
             }
+#else
             
+            //JObject = json = JObject.Parse(content);
+            // Jon
+#endif
+            //Store result for a little bit
+            string cached_result = Path.GetTempPath() + "\\DriverUpdate.SearchResults.txt";
+            var content = "";
+            bool use_cache = File.Exists(cached_result) && !IsExpired(cached_result, 4); 
+            if (use_cache)
+            {
+                content = File.ReadAllText(cached_result);                    
+            }
+            else
+            {
+                content = ReadTextFromUrl(WebsiteUrls.NvSource);
+                File.WriteAllText(cached_result, content);
+            }
+            //var decoded_data = WebUtility.UrlDecode(aaaa);
+            var o = JObject.Parse(content);
+            LinkItem account = JsonConvert.DeserializeObject<LinkItem>(content);
+            
+            var ids = o["IDS"].Children().ToList();
+            var item = ids[0]["downloadInfo"];
+            LinkItem owo = item.ToObject<Components.LinkItem>();
+            var version = item["Version"];
+            string spacing = "                      ";
+            Console.WriteLine(
+                String.Format("{1}\n{0}Release Date: {2}\n{0}Driver Type: {3}\n{0}Size: {4}\n{0}Details: {5}"
+                    ,spacing
+                    ,owo.Version + (use_cache ? " (cached)" : "")
+                    ,owo.ReleaseDateTime
+                    ,WebUtility.UrlDecode(owo.Name)
+                    ,owo.DownloadURLFileSize
+                    ,owo.DetailsURL
+                    )
+                );
+            latestVersion = default;
+            success = false;
             return success;
         }
+        public static string Dump(object obj)
+        {
+            return JsonConvert.SerializeObject(obj);
+        }
 
+        private static string ReadTextFromUrl(string url) {
+            // WebClient is still convenient
+            // Assume UTF8, but detect BOM - could also honor response charset I suppose
+            using (var client = new WebClient())
+            using (var stream = client.OpenRead(url))
+            using (var textReader = new StreamReader(stream, Encoding.UTF8, true)) {
+                return textReader.ReadToEnd();
+            }
+        }
         private static void MainProgramLoop()
         {
             //OptionContainer.Option.Parse(args);
