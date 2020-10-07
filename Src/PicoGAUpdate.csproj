@@ -126,10 +126,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>ping -n 2 127.0.0.1 &gt; nul
-"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe" sign /fd sha256 /a $(TargetPath)
-"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe" timestamp -t http://timestamp.verisign.com/scripts/timstamp.dll $(TargetPath)
-copy $(ProjectDir)\Components\Scripts\* $(TargetDir)</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

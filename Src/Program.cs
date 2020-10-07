@@ -618,25 +618,22 @@ namespace PicoGAUpdate
             }
             //var decoded_data = WebUtility.UrlDecode(aaaa);
             var o = JObject.Parse(content);
-            LinkItem account = JsonConvert.DeserializeObject<LinkItem>(content);
-            
             var ids = o["IDS"].Children().ToList();
             var item = ids[0]["downloadInfo"];
-            LinkItem owo = item.ToObject<Components.LinkItem>();
+            LinkItem tempObject = item.ToObject<LinkItem>();
             var version = item["Version"];
             string spacing = "                      ";
             Console.WriteLine(
                 String.Format("{1}\n{0}Release Date: {2}\n{0}Driver Type: {3}\n{0}Size: {4}\n{0}Details: {5}"
                     ,spacing
-                    ,owo.Version + (use_cache ? " (cached)" : "")
-                    ,owo.ReleaseDateTime
-                    ,WebUtility.UrlDecode(owo.Name)
-                    ,owo.DownloadURLFileSize
-                    ,owo.DetailsURL
+                    ,tempObject.Version + (use_cache ? " (cached)" : "")
+                    ,tempObject.ReleaseDateTime
+                    ,WebUtility.UrlDecode(tempObject.Name)
+                    ,tempObject.DownloadURLFileSize
+                    ,tempObject.DetailsURL
                     )
                 );
-            latestVersion = default;
-            success = false;
+            latestVersion = tempObject;
             return success;
         }
         public static string Dump(object obj)
@@ -647,6 +644,9 @@ namespace PicoGAUpdate
         private static string ReadTextFromUrl(string url) {
             // WebClient is still convenient
             // Assume UTF8, but detect BOM - could also honor response charset I suppose
+            // using System.Net;
+            ServicePointManager.Expect100Continue = true;
+            ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             using (var client = new WebClient())
             using (var stream = client.OpenRead(url))
             using (var textReader = new StreamReader(stream, Encoding.UTF8, true)) {
