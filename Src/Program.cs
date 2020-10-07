@@ -99,25 +99,24 @@ namespace PicoGAUpdate
             // Add fallback value required for math, if driver is missing/not detected.
             out_version = "000.00";
             out_vendor = "";
-            //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
-            //ManagementObjectSearcher DisplaySearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
-            ManagementObjectSearcher AdapterSearcher =
-                new ManagementObjectSearcher("Select * from Win32_videocontroller");
-            ManagementObjectCollection AdapterCollection = AdapterSearcher.Get();
-
+            ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
+            ManagementObjectCollection objCollection = objSearcher.Get();
             bool found = false;
             // TODO: Handle multiple display adapters. Needs testing.
-            ManagementObjectSearcher DisplaySearcher =
-                new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver where deviceclass = 'DISPLAY'");
-            ManagementObjectCollection DisplayCollection = DisplaySearcher.Get();
-            foreach (var obj in DisplayCollection)
+            foreach (ManagementObject obj in objCollection)
             {
-                string mfg = obj["Manufacturer"].ToString().ToUpperInvariant();
+                //string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
+                //Console.Out.WriteLine(info);
+                string mfg = obj["Manufacturer"]?.ToString().ToUpperInvariant();
                 switch (mfg)
                 {
                     case "NVIDIA":
                     {
                         string device = obj["DeviceName"].ToString();
+                            if (device.Equals("NVIDIA High Definition Audio"))
+                            {
+                                continue;
+                            }
                         if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") ||
                              device.Contains("Tesla")))
                         {
@@ -156,11 +155,14 @@ namespace PicoGAUpdate
                         break;
                 }
 
-                break;
+                //break;
             }
 
             if (!found)
             {
+                ManagementObjectSearcher AdapterSearcher =
+                new ManagementObjectSearcher("Select * from Win32_videocontroller");
+                ManagementObjectCollection AdapterCollection = AdapterSearcher.Get();
                 // try to find devices without drivers.
                 foreach (var o in AdapterCollection)
                 {
