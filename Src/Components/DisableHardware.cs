@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Management;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -7,28 +6,28 @@ namespace PicoGAUpdate.Components
 {
     public static class DisableHardware
     {
-        const uint DIF_PROPERTYCHANGE = 0x12;
-        const uint DICS_ENABLE = 1;
-        const uint DICS_DISABLE = 2;  // disable device
-        const uint DICS_FLAG_GLOBAL = 1; // not profile-specific
-        const uint DIGCF_ALLCLASSES = 4;
-        const uint DIGCF_PRESENT = 2;
-        const uint ERROR_INVALID_DATA = 13;
-        const uint ERROR_NO_MORE_ITEMS = 259;
-        const uint ERROR_ELEMENT_NOT_FOUND = 1168;
+        private const uint DIF_PROPERTYCHANGE = 0x12;
+        private const uint DICS_ENABLE = 1;
+        private const uint DICS_DISABLE = 2;  // disable device
+        private const uint DICS_FLAG_GLOBAL = 1; // not profile-specific
+        private const uint DIGCF_ALLCLASSES = 4;
+        private const uint DIGCF_PRESENT = 2;
+        private const uint ERROR_INVALID_DATA = 13;
+        private const uint ERROR_NO_MORE_ITEMS = 259;
+        private const uint ERROR_ELEMENT_NOT_FOUND = 1168;
 
-        static DEVPROPKEY DEVPKEY_Device_DeviceDesc;
-        static DEVPROPKEY DEVPKEY_Device_HardwareIds;
+        private static DEVPROPKEY DEVPKEY_Device_DeviceDesc;
+        private static DEVPROPKEY DEVPKEY_Device_HardwareIds;
 
         [StructLayout(LayoutKind.Sequential)]
-        struct SP_CLASSINSTALL_HEADER
+        private struct SP_CLASSINSTALL_HEADER
         {
             public UInt32 cbSize;
             public UInt32 InstallFunction;
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct SP_PROPCHANGE_PARAMS
+        private struct SP_PROPCHANGE_PARAMS
         {
             public SP_CLASSINSTALL_HEADER ClassInstallHeader;
             public UInt32 StateChange;
@@ -37,7 +36,7 @@ namespace PicoGAUpdate.Components
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct SP_DEVINFO_DATA
+        private struct SP_DEVINFO_DATA
         {
             public UInt32 cbSize;
             public Guid classGuid;
@@ -46,14 +45,14 @@ namespace PicoGAUpdate.Components
         }
 
         [StructLayout(LayoutKind.Sequential)]
-        struct DEVPROPKEY
+        private struct DEVPROPKEY
         {
             public Guid fmtid;
             public UInt32 pid;
         }
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern IntPtr SetupDiGetClassDevsW(
+        private static extern IntPtr SetupDiGetClassDevsW(
             [In] ref Guid ClassGuid,
             [MarshalAs(UnmanagedType.LPWStr)]
 string Enumerator,
@@ -61,27 +60,27 @@ string Enumerator,
             UInt32 flags);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern bool SetupDiDestroyDeviceInfoList(IntPtr handle);
+        private static extern bool SetupDiDestroyDeviceInfoList(IntPtr handle);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern bool SetupDiEnumDeviceInfo(IntPtr deviceInfoSet,
+        private static extern bool SetupDiEnumDeviceInfo(IntPtr deviceInfoSet,
             UInt32 memberIndex,
             [Out] out SP_DEVINFO_DATA deviceInfoData);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern bool SetupDiSetClassInstallParams(
+        private static extern bool SetupDiSetClassInstallParams(
             IntPtr deviceInfoSet,
             [In] ref SP_DEVINFO_DATA deviceInfoData,
             [In] ref SP_PROPCHANGE_PARAMS classInstallParams,
             UInt32 ClassInstallParamsSize);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern bool SetupDiChangeState(
+        private static extern bool SetupDiChangeState(
             IntPtr deviceInfoSet,
             [In] ref SP_DEVINFO_DATA deviceInfoData);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern bool SetupDiGetDevicePropertyW(
+        private static extern bool SetupDiGetDevicePropertyW(
                 IntPtr deviceInfoSet,
                 [In] ref SP_DEVINFO_DATA DeviceInfoData,
                 [In] ref DEVPROPKEY propertyKey,
@@ -92,7 +91,7 @@ string Enumerator,
                 UInt32 flags);
 
         [DllImport("setupapi.dll", SetLastError = true)]
-        static extern bool SetupDiGetDeviceRegistryPropertyW(
+        private static extern bool SetupDiGetDeviceRegistryPropertyW(
           IntPtr DeviceInfoSet,
           [In] ref SP_DEVINFO_DATA DeviceInfoData,
           UInt32 Property,
@@ -116,9 +115,6 @@ string Enumerator,
                 0xd1, 0x46, 0xa8, 0x50, 0xe0);
             DEVPKEY_Device_HardwareIds.pid = 3;
         }
-
-
-
 
         public static void DisableDevice(Func<string, bool> filter, bool disable = true)
         {
@@ -155,7 +151,6 @@ string Enumerator,
                     //                         devdata, DEVPKEY_Device_DeviceDesc));
                     //Console.WriteLine("   {0}", devicepath);
                     if (devicepath != null && filter(devicepath)) break;
-
                 }
 
                 SP_CLASSINSTALL_HEADER header = new SP_CLASSINSTALL_HEADER();
@@ -185,9 +180,9 @@ string Enumerator,
                     SetupDiDestroyDeviceInfoList(info);
             }
         }
+
         private static void CheckError(string message, int lasterror = -1)
         {
-
             int code = lasterror == -1 ? Marshal.GetLastWin32Error() : lasterror;
             if (code != 0)
                 throw new ApplicationException(
@@ -205,7 +200,7 @@ string Enumerator,
                 uint buflen = 512;
                 buffer = Marshal.AllocHGlobal((int)buflen);
                 outsize = 0;
-                // CHANGE #2 - Use this instead of SetupDiGetDeviceProperty 
+                // CHANGE #2 - Use this instead of SetupDiGetDeviceProperty
                 SetupDiGetDeviceRegistryPropertyW(
                     info,
                     ref devdata,
@@ -227,6 +222,5 @@ string Enumerator,
                     Marshal.FreeHGlobal(buffer);
             }
         }
-
     }
 }

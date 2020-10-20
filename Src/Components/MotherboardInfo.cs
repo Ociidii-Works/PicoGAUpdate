@@ -17,7 +17,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in motherboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return GetAvailability(int.Parse(queryObj["Availability"].ToString()));
                     }
                     return "";
@@ -37,7 +37,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         if (queryObj["HostingBoard"].ToString() == "True")
                             return true;
                         else
@@ -60,7 +60,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return ConvertToDateTime(queryObj["InstallDate"]?.ToString());
                     }
                     return "";
@@ -80,7 +80,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["Manufacturer"]?.ToString();
                     }
                     return "";
@@ -100,7 +100,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["Model"]?.ToString();
                     }
                     return "";
@@ -120,7 +120,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["PartNumber"]?.ToString();
                     }
                     return "";
@@ -141,7 +141,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in motherboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["PNPDeviceID"]?.ToString();
                     }
                     return "";
@@ -161,7 +161,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in motherboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["PrimaryBusType"]?.ToString();
                     }
                     return "";
@@ -181,7 +181,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["Product"]?.ToString();
                     }
                     return "";
@@ -201,7 +201,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         if (queryObj["Removable"].ToString() == "True")
                             return true;
                         else
@@ -224,7 +224,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         if (queryObj["Replaceable"].ToString() == "True")
                             return true;
                         else
@@ -247,7 +247,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in motherboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["RevisionNumber"]?.ToString();
                     }
                     return "";
@@ -267,7 +267,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in motherboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["SecondaryBusType"]?.ToString();
                     }
                     return "";
@@ -287,7 +287,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["SerialNumber"]?.ToString();
                     }
                     return "";
@@ -307,7 +307,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var querObj = (ManagementObject) o;
+                        var querObj = (ManagementObject)o;
                         return querObj["Status"]?.ToString();
                     }
                     return "";
@@ -327,7 +327,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in motherboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["SystemName"]?.ToString();
                     }
                     return "";
@@ -347,7 +347,7 @@ namespace PicoGAUpdate.Components
                 {
                     foreach (var o in baseboardSearcher.Get())
                     {
-                        var queryObj = (ManagementObject) o;
+                        var queryObj = (ManagementObject)o;
                         return queryObj["Version"]?.ToString();
                     }
                     return "";

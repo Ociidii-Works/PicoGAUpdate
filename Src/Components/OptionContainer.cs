@@ -40,7 +40,7 @@ namespace PicoGAUpdate.Components
 
     public class OptionContainer
     {
-        static List<Option> OptionsList = new List<Option>();
+        private static List<Option> OptionsList = new List<Option>();
 
         public static Option Clean = new Option("--clean", "-c", false,
             "Cleans the installer \"leftovers\" in \'Installer2\'. Note: This will break the built-in uninstaller.");
@@ -53,9 +53,9 @@ namespace PicoGAUpdate.Components
 
         public static Option ForceInstall = new Option("--install", "-f", false,
             "Force installation of the latest driver version even if up-to-date.");
+
         public static Option NoInstall = new Option("--noinstall", "-F", false,
             "Do not replace the current driver.");
-
 
         public static Option Silent = new Option("--silent", "-s", false,
             "Run the installer silently.");
@@ -74,9 +74,9 @@ namespace PicoGAUpdate.Components
             " or " + Strip.GetLongSwitch() + ".");
 
         public static Option NoAudio = new Option("--noaudio", "-a", false, "Automatically disable the HDMI audio devices created by your device.");
-        
+
         public static Option NoDownload = new Option("--nodownload", "-N", false, "Skip downloading the driver entirely. May not work with all options.");
-        
+
         public static Option Pretend = new Option("--pretend", "-p", false,
             "Skip running the installer. Useful for debugging or preview changes.");
 
@@ -120,7 +120,7 @@ namespace PicoGAUpdate.Components
                 HelpText = helpText;
                 OptionsList.Add(this);
             }
-            
+
             public Option()
             {
             }
@@ -135,6 +135,7 @@ namespace PicoGAUpdate.Components
             {
                 return !ReferenceEquals(foo, null) && foo.GetValue();
             }
+
             public bool Is(Option other)
             {
                 return LongSwitch.Equals(other.LongSwitch);
@@ -214,10 +215,8 @@ namespace PicoGAUpdate.Components
 
             public static void Parse(string[] args)
             {
-
                 if (args != null)
                 {
-
                     if (args.Length > 0)
                     {
                         foreach (var arg in args.ToArray())
@@ -247,7 +246,6 @@ namespace PicoGAUpdate.Components
                         Silent.SetValue(true);
                     }
                 }
-                
             }
         }
     }

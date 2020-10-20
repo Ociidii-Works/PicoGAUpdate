@@ -1,4 +1,7 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using PicoGAUpdate.Components;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -7,19 +10,15 @@ using System.IO;
 using System.Linq;
 using System.Management;
 using System.Net;
-using System.Web;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
-using PicoGAUpdate.Components;
 
 namespace PicoGAUpdate
 
 {
-    static class Program
+    internal static class Program
     {
         public static readonly string NvidiaExtractedPath = Path.GetTempPath() + @"DriverUpdateEXNvidia";
 
@@ -74,12 +73,12 @@ namespace PicoGAUpdate
 
         public static string GetChipsetModel()
         {
-//#if DEBUG
+            //#if DEBUG
             Console.WriteLine("*    Motherboard");
-			Console.WriteLine("         Manufacturer: " + MotherboardInfo.Manufacturer);
-			Console.WriteLine("         Product: " + MotherboardInfo.Product);
-			Console.Out.Flush();
-//#endif
+            Console.WriteLine("         Manufacturer: " + MotherboardInfo.Manufacturer);
+            Console.WriteLine("         Product: " + MotherboardInfo.Product);
+            Console.Out.Flush();
+            //#endif
             // A crude implementation until more testing is done
             if (MotherboardInfo.Product != null)
             {
@@ -111,49 +110,49 @@ namespace PicoGAUpdate
                 switch (mfg)
                 {
                     case "NVIDIA":
-                    {
-                        string device = obj["DeviceName"].ToString();
+                        {
+                            string device = obj["DeviceName"].ToString();
                             if (device.Equals("NVIDIA High Definition Audio"))
                             {
                                 continue;
                             }
 
-                        // TODO: List match unless much slower.
-                        if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") ||
-                             device.Contains("Tesla")))
-                        {
-                            // Rebuild version according to the nvidia format
-                            string[] version = obj["DriverVersion"].ToString().Split('.');
+                            // TODO: List match unless much slower.
+                            if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") ||
+                                 device.Contains("Tesla")))
                             {
-                                string nvidiaVersion =
-                                    ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3,
-                                        ".");
-                                Console.WriteLine("             NVIDIA Driver v" + nvidiaVersion);
-                                out_version = nvidiaVersion;
-                                found = true;
+                                // Rebuild version according to the nvidia format
+                                string[] version = obj["DriverVersion"].ToString().Split('.');
+                                {
+                                    string nvidiaVersion =
+                                        ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3,
+                                            ".");
+                                    Console.WriteLine("             NVIDIA Driver v" + nvidiaVersion);
+                                    out_version = nvidiaVersion;
+                                    found = true;
+                                }
                             }
-                        }
 
-                        out_vendor = "NVIDIA";
-                    }
+                            out_vendor = "NVIDIA";
+                        }
                         break;
 
                     case "AMD":
-                    {
-                        string device = obj["DeviceName"].ToString();
-                        Console.WriteLine("         Found AMD device '" + device + "'");
-                        Console.WriteLine(
-                            "             Sorry, support for AMD graphic cards is not currently implemented.");
-                    }
+                        {
+                            string device = obj["DeviceName"].ToString();
+                            Console.WriteLine("         Found AMD device '" + device + "'");
+                            Console.WriteLine(
+                                "             Sorry, support for AMD graphic cards is not currently implemented.");
+                        }
                         break;
 
                     case "INTEL":
-                    {
-                        string device = obj["DeviceName"].ToString();
-                        Console.WriteLine("         Found Intel device '" + device + "'");
-                        Console.WriteLine(
-                            "             Sorry, support for Intel graphic cards is not currently implemented.");
-                    }
+                        {
+                            string device = obj["DeviceName"].ToString();
+                            Console.WriteLine("         Found Intel device '" + device + "'");
+                            Console.WriteLine(
+                                "             Sorry, support for Intel graphic cards is not currently implemented.");
+                        }
                         break;
                 }
 
@@ -168,7 +167,7 @@ namespace PicoGAUpdate
                 // try to find devices without drivers.
                 foreach (var o in AdapterCollection)
                 {
-                    var obj = (ManagementObject) o;
+                    var obj = (ManagementObject)o;
                     string deviceID = obj["PNPDeviceID"].ToString();
                     string vendor = deviceID.Split('&').First().Split('\\').ElementAt(1);
                     //string info = String.Format("           {3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
@@ -332,7 +331,7 @@ namespace PicoGAUpdate
         {
             // TODO: Figure what to do when downloading an older version
             // FIXME: Still gets called when using nodownload switch
-            if(OptionContainer.NoDownload)
+            if (OptionContainer.NoDownload)
             {
                 return;
             }
@@ -554,66 +553,40 @@ namespace PicoGAUpdate
             ExitImmediately = true;
             return true;
         }
+
         // TODO: Re-write logic to use inheritance and other fun logic to cascade which GPU is currently being processed instead of looping through vendors inside each function.
         public static void DisableAudio()
         {
-            //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
-            //ManagementObjectCollection objCollection = objSearcher.Get();
-            //bool found = false;
-            //// TODO: Handle multiple display adapters. Needs testing.
-            //foreach (ManagementObject obj in objCollection)
-            //{
-            //    //string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
-            //    //Console.Out.WriteLine(info);
-            //    string mfg = obj["Manufacturer"]?.ToString().ToUpperInvariant();
-            //    switch (mfg)
-            //    {
-            //        case "NVIDIA":
-            //            {
-            //                string device = obj["DeviceName"].ToString();
-            //                if (device.Equals("NVIDIA High Definition Audio"))
-            //                {
-            //                    Console.WriteLine(device);
-            //                    obj.InvokeMethod("Disable", null);
-            //                }
-            //            }
-            //            break;
-            //    }
-            //}
-
-            //if (!found)
+            ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
+            ManagementObjectCollection objCollection = objSearcher.Get();
+            foreach (ManagementBaseObject o in objCollection)
             {
-                ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
-                ManagementObjectCollection objCollection = objSearcher.Get();
-                foreach (ManagementBaseObject o in objCollection)
+                var obj = (ManagementObject)o;
+                var properties = obj.Properties;
+                var rawDeviceID = properties["PNPDeviceID"].Value;
+                if (rawDeviceID != null && rawDeviceID.ToString().StartsWith(@"PCI"))
                 {
-                    var obj = (ManagementObject)o;
-                    var properties = obj.Properties;
-                    var rawDeviceID = properties["PNPDeviceID"].Value;
-                    if (rawDeviceID != null && rawDeviceID.ToString().StartsWith(@"PCI"))
+                    List<string> deviceID = obj["PNPDeviceID"].ToString().Substring(4).Split('&').ToList();
+                    if (deviceID != null)
                     {
-
-                        List<string> deviceID = obj["PNPDeviceID"].ToString().Substring(4).Split('&').ToList();
-                        if (deviceID != null)
+                        string vendor = deviceID.ElementAt(0);
+                        string model = deviceID.ElementAt(1);
+                        switch (vendor)
                         {
-                            string vendor = deviceID.ElementAt(0);
-                            string model = deviceID.ElementAt(1);
-                            switch (vendor)
-                            {
-                                case "VEN_10DE": // NVIDIA
-                                    switch (model)
-                                    {
-                                        case "DEV_10F0": // NVIDIA HMDI Audio
-                                            DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model), true);
-                                            continue;
-                                    }
-                                    continue;
-                            }
+                            case "VEN_10DE": // NVIDIA
+                                switch (model)
+                                {
+                                    case "DEV_10F0": // NVIDIA HMDI Audio
+                                        DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model), true);
+                                        continue;
+                                }
+                                continue;
                         }
                     }
                 }
             }
         }
+
         private static void Main(string[] args)
         {
             OptionContainer.Option.Parse(args);
@@ -621,7 +594,7 @@ namespace PicoGAUpdate
             // An alternative approach is to use https://stackoverflow.com/questions/38062177/is-it-possible-to-send-toast-notification-from-console-application
             // to have the ability to send a balloon tip
             MainProgramLoop();
-            if(!ExitImmediately)
+            if (!ExitImmediately)
             {
                 Console.WriteLine("Press any key to quit...");
                 Console.ReadKey();
@@ -635,7 +608,7 @@ namespace PicoGAUpdate
             var time = System.IO.File.GetCreationTime(filename);
             return time >= threshold;
         }
-        
+
         private static bool GetLatestDriverVersion(out LinkItem latestVersion)
         {
             // FIXME: This shouldn't run unless we have to...
@@ -644,7 +617,7 @@ namespace PicoGAUpdate
             int textEndCursorPos = Console.CursorLeft;
             WebClient w = new WebClient();
             bool success = true;
-            #if OLD_DOWNLOADER
+#if OLD_DOWNLOADER
             try
             {
                 string s = w.DownloadString(address: WebsiteUrls.RedditSource);
@@ -671,17 +644,17 @@ namespace PicoGAUpdate
                 success = false;
             }
 #else
-            
+
             //JObject = json = JObject.Parse(content);
             // Jon
 #endif
             //Store result for a little bit
             string cached_result = Path.GetTempPath() + "\\DriverUpdate.SearchResults.txt";
             var content = "";
-            bool use_cache = File.Exists(cached_result) && !IsExpired(cached_result, 4); 
+            bool use_cache = File.Exists(cached_result) && !IsExpired(cached_result, 4);
             if (use_cache)
             {
-                content = File.ReadAllText(cached_result);                    
+                content = File.ReadAllText(cached_result);
             }
             else
             {
@@ -697,23 +670,25 @@ namespace PicoGAUpdate
             string spacing = "                      ";
             Console.WriteLine(
                 String.Format("{1}\n{0}Release Date: {2}\n{0}Driver Type: {3}\n{0}Size: {4}\n{0}Details: {5}"
-                    ,spacing
-                    ,tempObject.Version + (use_cache ? " (cached)" : "")
-                    ,tempObject.ReleaseDateTime
-                    ,WebUtility.UrlDecode(tempObject.Name)
-                    ,tempObject.DownloadURLFileSize
-                    ,tempObject.DetailsURL
+                    , spacing
+                    , tempObject.Version + (use_cache ? " (cached)" : "")
+                    , tempObject.ReleaseDateTime
+                    , WebUtility.UrlDecode(tempObject.Name)
+                    , tempObject.DownloadURLFileSize
+                    , tempObject.DetailsURL
                     )
                 );
             latestVersion = tempObject;
             return success;
         }
+
         public static string Dump(object obj)
         {
             return JsonConvert.SerializeObject(obj);
         }
 
-        private static string ReadTextFromUrl(string url) {
+        private static string ReadTextFromUrl(string url)
+        {
             // WebClient is still convenient
             // Assume UTF8, but detect BOM - could also honor response charset I suppose
             // using System.Net;
@@ -721,10 +696,12 @@ namespace PicoGAUpdate
             ServicePointManager.SecurityProtocol = SecurityProtocolType.Tls12;
             using (var client = new WebClient())
             using (var stream = client.OpenRead(url))
-            using (var textReader = new StreamReader(stream, Encoding.UTF8, true)) {
+            using (var textReader = new StreamReader(stream, Encoding.UTF8, true))
+            {
                 return textReader.ReadToEnd();
             }
         }
+
         private static void MainProgramLoop()
         {
             //OptionContainer.Option.Parse(args);
