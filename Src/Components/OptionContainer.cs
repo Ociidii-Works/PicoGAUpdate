@@ -53,6 +53,9 @@ namespace PicoGAUpdate.Components
 
         public static Option ForceInstall = new Option("--install", "-f", false,
             "Force installation of the latest driver version even if up-to-date.");
+        public static Option NoInstall = new Option("--noinstall", "-F", false,
+            "Do not replace the current driver.");
+
 
         public static Option Silent = new Option("--silent", "-s", false,
             "Run the installer silently.");
@@ -70,6 +73,10 @@ namespace PicoGAUpdate.Components
             "Do not attempt to download and run a new driver package. Useful in combination with " + Clean.GetLongSwitch() +
             " or " + Strip.GetLongSwitch() + ".");
 
+        public static Option NoAudio = new Option("--noaudio", "-a", false, "Automatically disable the HDMI audio devices created by your device.");
+        
+        public static Option NoDownload = new Option("--nodownload", "-N", false, "Skip downloading the driver entirely. May not work with all options.");
+        
         public static Option Pretend = new Option("--pretend", "-p", false,
             "Skip running the installer. Useful for debugging or preview changes.");
 

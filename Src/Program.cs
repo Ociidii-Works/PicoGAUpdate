@@ -117,6 +117,8 @@ namespace PicoGAUpdate
                             {
                                 continue;
                             }
+
+                        // TODO: List match unless much slower.
                         if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") ||
                              device.Contains("Tesla")))
                         {
@@ -329,6 +331,11 @@ namespace PicoGAUpdate
         private static void DownloadDriver(string url, string version, string destination)
         {
             // TODO: Figure what to do when downloading an older version
+            // FIXME: Still gets called when using nodownload switch
+            if(OptionContainer.NoDownload)
+            {
+                return;
+            }
 
             if (File.Exists(destination) && !(OptionContainer.ForceDownload))
             {
@@ -393,6 +400,10 @@ namespace PicoGAUpdate
 
         public static void StripDriver(string installerPath, string version)
         {
+            if (!File.Exists(installerPath))
+            {
+                return;
+            }
             // Find WinRar
             string winRar = "";
             // 64-bit Winrar on 64-bit architecture
@@ -491,13 +502,13 @@ namespace PicoGAUpdate
 
         public static bool InstallDriver(string installerPath, string version)
         {
-            if ((string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath)) && !Directory.Exists(NvidiaExtractedPath))
-            {
-                throw new Exception("Installer file does not exist!");
-            }
-
             try
             {
+                if ((string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath)) || !Directory.Exists(NvidiaExtractedPath))
+                {
+                    Console.WriteLine("Installer file does not exist!");
+                    return false;
+                }
                 string setupPath = NvidiaExtractedPath + @"\setup.exe";
                 Process p = new Process();
                 p.StartInfo.FileName = setupPath;
@@ -543,7 +554,66 @@ namespace PicoGAUpdate
             ExitImmediately = true;
             return true;
         }
+        // TODO: Re-write logic to use inheritance and other fun logic to cascade which GPU is currently being processed instead of looping through vendors inside each function.
+        public static void DisableAudio()
+        {
+            //ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
+            //ManagementObjectCollection objCollection = objSearcher.Get();
+            //bool found = false;
+            //// TODO: Handle multiple display adapters. Needs testing.
+            //foreach (ManagementObject obj in objCollection)
+            //{
+            //    //string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
+            //    //Console.Out.WriteLine(info);
+            //    string mfg = obj["Manufacturer"]?.ToString().ToUpperInvariant();
+            //    switch (mfg)
+            //    {
+            //        case "NVIDIA":
+            //            {
+            //                string device = obj["DeviceName"].ToString();
+            //                if (device.Equals("NVIDIA High Definition Audio"))
+            //                {
+            //                    Console.WriteLine(device);
+            //                    obj.InvokeMethod("Disable", null);
+            //                }
+            //            }
+            //            break;
+            //    }
+            //}
 
+            //if (!found)
+            {
+                ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
+                ManagementObjectCollection objCollection = objSearcher.Get();
+                foreach (ManagementBaseObject o in objCollection)
+                {
+                    var obj = (ManagementObject)o;
+                    var properties = obj.Properties;
+                    var rawDeviceID = properties["PNPDeviceID"].Value;
+                    if (rawDeviceID != null && rawDeviceID.ToString().StartsWith(@"PCI"))
+                    {
+
+                        List<string> deviceID = obj["PNPDeviceID"].ToString().Substring(4).Split('&').ToList();
+                        if (deviceID != null)
+                        {
+                            string vendor = deviceID.ElementAt(0);
+                            string model = deviceID.ElementAt(1);
+                            switch (vendor)
+                            {
+                                case "VEN_10DE": // NVIDIA
+                                    switch (model)
+                                    {
+                                        case "DEV_10F0": // NVIDIA HMDI Audio
+                                            DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model), true);
+                                            continue;
+                                    }
+                                    continue;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         private static void Main(string[] args)
         {
             OptionContainer.Option.Parse(args);
@@ -703,16 +773,20 @@ namespace PicoGAUpdate
                     {
                         Console.WriteLine("                Your driver is up-to-date! Well done!");
                     }
+                    bool no_downloaded_driver = (!File.Exists(NvidiaExtractedPath + @"\" +
+                                                                               "setup.exe") &&
+                                                                           !File.Exists(InstallerPackageDestination));
                     // TODO: Handle missing file inside the proper function to allow different vendors and partial recovery from missing file instead of downloading everything for no reason
                     //if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
-                    bool do_download = OptionContainer.ForceDownload || currentIsOutOfDate ||
-                                                                         (OptionContainer.ForceInstall &&
-                                                                          (!File.Exists(NvidiaExtractedPath + @"\" +
-                                                                               "setup.exe") &&
-                                                                           !File.Exists(InstallerPackageDestination)));
+                    bool do_download = (OptionContainer.ForceDownload || (!OptionContainer.NoUpdate && currentIsOutOfDate) ||
+                                                                         (OptionContainer.ForceInstall && no_downloaded_driver));
                     //if (OptionContainer.ForceDownload || !File.Exists(InstallerPackageDestination) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
-                    if(do_download)
+                    if (!OptionContainer.NoDownload && do_download)
                     {
+                        if (no_downloaded_driver)
+                        {
+                            Console.WriteLine("                Downloading driver as there is no local copy to process");
+                        }
                         DownloadDriver(latestDriver.DownloadUrl, latestDriver.Version, InstallerPackageDestination);
                     }
                     if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
@@ -720,7 +794,7 @@ namespace PicoGAUpdate
 
                     // TODO: Add ExtractDriver step
                     // }
-                    if ((OptionContainer.ForceInstall || currentIsOutOfDate) && !OptionContainer.DownloadOnly)
+                    if (OptionContainer.ForceInstall || !OptionContainer.NoInstall)
                     {
                         InstallDriver(InstallerPackageDestination, latestDriver.Version);
                     }
@@ -728,6 +802,10 @@ namespace PicoGAUpdate
                     {
                         // show baloon tip
                         // Program.sTrayIcon.ShowBalloonTi
+                    }
+                    if (OptionContainer.NoAudio)
+                    {
+                        DisableAudio();
                     }
 
                     if (OptionContainer.DeleteDownloaded)
