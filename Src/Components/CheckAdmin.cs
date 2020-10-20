@@ -6,9 +6,6 @@ namespace PicoGAUpdate.Components
 {
     internal class CheckAdmin
     {
-        private static readonly WindowsIdentity Identity = WindowsIdentity.GetCurrent();
-        private static readonly WindowsPrincipal Principal = new WindowsPrincipal(Identity ?? throw new InvalidOperationException());
-
         public static bool IsElevated
         {
             get
@@ -17,5 +14,8 @@ namespace PicoGAUpdate.Components
                 return Principal.IsInRole(WindowsBuiltInRole.Administrator);
             }
         }
+
+        private static readonly WindowsIdentity Identity = WindowsIdentity.GetCurrent();
+        private static readonly WindowsPrincipal Principal = new WindowsPrincipal(Identity ?? throw new InvalidOperationException());
     }
 }

@@ -6,9 +6,6 @@ namespace PicoGAUpdate.Components
     // TODO: Generalize into DeviceInfo
     static public class MotherboardInfo
     {
-        private static ManagementObjectSearcher baseboardSearcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_BaseBoard");
-        private static ManagementObjectSearcher motherboardSearcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_MotherboardDevice");
-
         static public string Availability
         {
             get
@@ -359,30 +356,8 @@ namespace PicoGAUpdate.Components
             }
         }
 
-        private static string GetAvailability(int availability)
-        {
-            switch (availability)
-            {
-                case 1: return "Other";
-                case 2: return "Unknown";
-                case 3: return "Running or Full Power";
-                case 4: return "Warning";
-                case 5: return "In Test";
-                case 6: return "Not Applicable";
-                case 7: return "Power Off";
-                case 8: return "Off Line";
-                case 9: return "Off Duty";
-                case 10: return "Degraded";
-                case 11: return "Not Installed";
-                case 12: return "Install Error";
-                case 13: return "Power Save - Unknown";
-                case 14: return "Power Save - Low Power Mode";
-                case 15: return "Power Save - Standby";
-                case 16: return "Power Cycle";
-                case 17: return "Power Save - Warning";
-                default: return "Unknown";
-            }
-        }
+        private static ManagementObjectSearcher baseboardSearcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_BaseBoard");
+        private static ManagementObjectSearcher motherboardSearcher = new ManagementObjectSearcher("root\\CIMV2", "SELECT * FROM Win32_MotherboardDevice");
 
         private static string ConvertToDateTime(string unconvertedTime)
         {
@@ -406,6 +381,31 @@ namespace PicoGAUpdate.Components
             convertedTime = date.ToString() + "/" + month.ToString() + "/" + year.ToString() + " " +
             hours.ToString() + ":" + minutes.ToString() + ":" + seconds.ToString() + " " + meridian;
             return convertedTime;
+        }
+
+        private static string GetAvailability(int availability)
+        {
+            switch (availability)
+            {
+                case 1: return "Other";
+                case 2: return "Unknown";
+                case 3: return "Running or Full Power";
+                case 4: return "Warning";
+                case 5: return "In Test";
+                case 6: return "Not Applicable";
+                case 7: return "Power Off";
+                case 8: return "Off Line";
+                case 9: return "Off Duty";
+                case 10: return "Degraded";
+                case 11: return "Not Installed";
+                case 12: return "Install Error";
+                case 13: return "Power Save - Unknown";
+                case 14: return "Power Save - Low Power Mode";
+                case 15: return "Power Save - Standby";
+                case 16: return "Power Cycle";
+                case 17: return "Power Save - Warning";
+                default: return "Unknown";
+            }
         }
     }
 }
