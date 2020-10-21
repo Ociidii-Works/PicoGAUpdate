@@ -1,1 +1,1 @@
-.\PicoGAUpdate.exe --strip
+.\PicoGAUpdate.exe
