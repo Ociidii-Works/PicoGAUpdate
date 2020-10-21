@@ -120,6 +120,102 @@ namespace PicoGAUpdate
             return JsonConvert.SerializeObject(obj);
         }
 
+        public static void ExtractDriver(string installerPath)
+        {
+            if (!File.Exists(installerPath))
+            {
+                return;
+            }
+            // Find WinRar
+            string winRar = "";
+            // 64-bit Winrar on 64-bit architecture
+            string winRar6432P = Environment.GetEnvironmentVariable("ProgramW6432") +
+                  @"\WinRAR\WinRAR.exe";
+            // 64-bit WinRAR from 32-bit app
+            string winRar6464P = Environment.SpecialFolder.ProgramFiles + @"\WinRAR\WinRAR.exe";
+            // 32-bit Winrar on 64-bit architecture
+            string winRar3264P = Environment.SpecialFolder.ProgramFilesX86 + @"\WinRAR\WinRAR.exe";
+            if (File.Exists(winRar6464P))
+            {
+                winRar = winRar6464P;
+            }
+            else if (File.Exists(winRar6432P))
+            {
+                winRar = winRar6432P;
+            }
+            else if (File.Exists(winRar3264P))
+            {
+                winRar = winRar3264P;
+            }
+
+            if (!string.IsNullOrEmpty(winRar))
+            {
+                // TODO: Optimize checks here
+                if (!Directory.Exists(NvidiaExtractedPath) || !File.Exists(NvidiaExtractedPath + @"\setup.exe") || !Directory.Exists(NvidiaExtractedPath + @"\Display.Driver"))
+                {
+                    //Safe.DirectoryDelete(NvidiaExtractedPath);
+                    Console.WriteLine("Creating " + NvidiaExtractedPath);
+                    Directory.CreateDirectory(NvidiaExtractedPath);
+
+                    Process wProcess = new Process
+                    {
+                        StartInfo =
+      {
+       FileName = winRar,
+       UseShellExecute = false,
+       CreateNoWindow = false,
+       Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, NvidiaExtractedPath)
+      }
+                    };
+                    Console.Write("Extracting installer '" + installerPath + "'");
+                    Console.WriteLine("");
+                    wProcess.Start();
+                    wProcess.WaitForExit();
+                    Console.WriteLine("Done.");
+                }
+
+                if (OptionContainer.BareDriver)
+                {
+                    Console.WriteLine("Installing bare driver...");
+                    string[] array2 = Directory.GetFiles(NvidiaExtractedPath + @"\Display.Driver", "*.INF");
+                    foreach (string name in array2)
+                    {
+                        Console.WriteLine(name);
+                        InstallHinfSection(IntPtr.Zero, IntPtr.Zero, name, 0);
+                    }
+                }
+
+                // Hack up the installer a little to remove unwanted "features"such as Telemetry
+                if (!OptionContainer.NoStrip)
+                {
+                    Console.WriteLine("Stripping driver...");
+
+                    List<string> components = Directory.EnumerateDirectories(NvidiaExtractedPath).ToList();
+
+                    foreach (string c in components)
+                    {
+                        if (NvidiaCoreComponents.Contains(Path.GetFileName(c)))
+
+                        {
+                            continue;
+                        }
+                        Safe.DirectoryDelete(c, true);
+                    }
+                    // edit setup.cfg to prevent failure
+                    string text = File.ReadAllText(NvidiaExtractedPath + @"\setup.cfg");
+                    text = text.Replace(@"<file name=""${{EulaHtmlFile}}""/>", "");
+                    text = text.Replace(@"<file name=""${{FunctionalConsentFile}}""/>", "");
+                    text = text.Replace(@"<file name=""${{PrivacyPolicyFile}}""/>", "");
+                    File.WriteAllText(NvidiaExtractedPath + @"\setup.cfg", text);
+                }
+            }
+            else
+            {
+                Console.WriteLine("Driver modification requires WinRAR. Please install in the default location.");
+                Environment.Exit(1);
+            }
+        }
+
         // TODO: Remove in favor of ProcessRawDevices
         public static string GetChipsetModel()
         {
@@ -239,7 +335,7 @@ namespace PicoGAUpdate
         {
             try
             {
-                if ((string.IsNullOrEmpty(installerPath) || !File.Exists(installerPath)) || !Directory.Exists(NvidiaExtractedPath))
+                if ((string.IsNullOrEmpty(installerPath) || (!File.Exists(installerPath)) && !Directory.Exists(NvidiaExtractedPath)))
                 {
                     Console.WriteLine("Installer file does not exist!");
                     return false;
@@ -249,7 +345,7 @@ namespace PicoGAUpdate
                 p.StartInfo.FileName = setupPath;
                 if (!OptionContainer.BareDriver)
                 {
-                    if (OptionContainer.Silent || OptionContainer.Strip)
+                    if (OptionContainer.Silent)
                     {
                         Console.WriteLine("Running Installer silently... Your monitor(s) may flicker several times...");
                         p.StartInfo.Arguments = "-s";
@@ -322,7 +418,23 @@ namespace PicoGAUpdate
                 {
                     try
                     {
-                        content = ReadTextFromUrl(WebsiteUrls.NvSource);
+                        // Build driver query based on the operating system's values
+                        System.UriBuilder driverJsonUrl = new UriBuilder("http://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php");
+                        var querystr = System.Web.HttpUtility.ParseQueryString("");
+                        querystr["func"] = "DriverManualLookup";
+                        // TODO: Handle a few generations of GPUs via gpu id.
+                        querystr["psid"] = "111"; // ???????
+                        querystr["pfid"] = "816"; // GTX 1070
+                        querystr["osID"] = "57"; // "Windows 10 64-bit"
+                        querystr["languageCode"] = "1033"; // "English (US)
+                        querystr["beta"] = "0";
+                        querystr["isWHQL"] = "0";
+                        querystr["dltype"] = "-1";
+                        querystr["sort"] = "0";
+                        querystr["numberOfResults"] = "20";
+                        driverJsonUrl.Query = querystr.ToString();
+                        var url = driverJsonUrl.ToString();
+                        content = ReadTextFromUrl(url);
                     }
                     catch (Exception)
                     {
@@ -442,19 +554,16 @@ namespace PicoGAUpdate
                                                 }
                                                 var latest_driver = out_details.First();
                                                 var installer_file = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", latest_driver.Version.ToString());
-                                                if (DownloadDriver(latest_driver.DownloadUrl, latest_driver.Version.ToString(), installer_file))
+                                                if (DownloadDriver(latest_driver, installer_file))
                                                 {
                                                     if (OptionContainer.NoInstall)
                                                     {
                                                         continue;
                                                     }
+                                                    ExtractDriver(installer_file);
                                                     if (InstallDriver(installer_file))
                                                     {
-                                                        if (!OptionContainer.Strip)
-                                                        {
-                                                            continue;
-                                                        }
-                                                        StripDriver(installer_file);
+                                                        Console.WriteLine("Tada!");
                                                     }
                                                 }
                                             }
@@ -477,7 +586,7 @@ namespace PicoGAUpdate
             }
         }
 
-        public static void RollingOutput(string data, bool clearRestOfLine = false)
+        public static void RollingOutput(string data, bool clearRestOfLine = false, int cursor_left_cap = 0)
         {
             // Gross hack to prevent multiple outputting at once.
             if (!_isoutputting)
@@ -491,12 +600,12 @@ namespace PicoGAUpdate
                     {
                         Console.CursorVisible = false;
                         Console.Write('\r');
-                        Console.SetCursorPosition(0, Console.CursorTop);
+                        Console.SetCursorPosition(cursor_left_cap, Console.CursorTop);
                         var top = Console.CursorTop;
 
-                        if (Console.CursorLeft != 0)
+                        if (Console.CursorLeft != cursor_left_cap)
                         {
-                            Console.SetCursorPosition(0, top);
+                            Console.SetCursorPosition(cursor_left_cap, top);
                         }
 
                         if (clearRestOfLine)
@@ -510,7 +619,7 @@ namespace PicoGAUpdate
 
                         if (Console.CursorTop != top)
                         {
-                            Console.SetCursorPosition(0, Console.CursorTop - top);
+                            Console.SetCursorPosition(cursor_left_cap, Console.CursorTop - top);
                         }
                     }
                     catch
@@ -549,102 +658,6 @@ namespace PicoGAUpdate
                 }
             }
             return version;
-        }
-
-        public static void StripDriver(string installerPath)
-        {
-            if (!File.Exists(installerPath))
-            {
-                return;
-            }
-            // Find WinRar
-            string winRar = "";
-            // 64-bit Winrar on 64-bit architecture
-            string winRar6432P = Environment.GetEnvironmentVariable("ProgramW6432") +
-                  @"\WinRAR\WinRAR.exe";
-            // 64-bit WinRAR from 32-bit app
-            string winRar6464P = Environment.SpecialFolder.ProgramFiles + @"\WinRAR\WinRAR.exe";
-            // 32-bit Winrar on 64-bit architecture
-            string winRar3264P = Environment.SpecialFolder.ProgramFilesX86 + @"\WinRAR\WinRAR.exe";
-            if (File.Exists(winRar6464P))
-            {
-                winRar = winRar6464P;
-            }
-            else if (File.Exists(winRar6432P))
-            {
-                winRar = winRar6432P;
-            }
-            else if (File.Exists(winRar3264P))
-            {
-                winRar = winRar3264P;
-            }
-
-            if (!string.IsNullOrEmpty(winRar))
-            {
-                // TODO: Optimize checks here
-                if (!Directory.Exists(NvidiaExtractedPath) || !File.Exists(NvidiaExtractedPath + @"\setup.exe") || !Directory.Exists(NvidiaExtractedPath + @"\Display.Driver"))
-                {
-                    //Safe.DirectoryDelete(NvidiaExtractedPath);
-                    Console.WriteLine("Creating " + NvidiaExtractedPath);
-                    Directory.CreateDirectory(NvidiaExtractedPath);
-
-                    Process wProcess = new Process
-                    {
-                        StartInfo =
-      {
-       FileName = winRar,
-       UseShellExecute = false,
-       CreateNoWindow = false,
-       Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, NvidiaExtractedPath)
-      }
-                    };
-                    Console.Write("Extracting installer '" + installerPath + "'");
-                    Console.WriteLine("");
-                    wProcess.Start();
-                    wProcess.WaitForExit();
-                    Console.WriteLine("Done.");
-                }
-
-                if (OptionContainer.BareDriver)
-                {
-                    Console.WriteLine("Installing bare driver...");
-                    string[] array2 = Directory.GetFiles(NvidiaExtractedPath + @"\Display.Driver", "*.INF");
-                    foreach (string name in array2)
-                    {
-                        Console.WriteLine(name);
-                        InstallHinfSection(IntPtr.Zero, IntPtr.Zero, name, 0);
-                    }
-                }
-
-                // Hack up the installer a little to remove unwanted "features"such as Telemetry
-                if (OptionContainer.Strip)
-                {
-                    Console.WriteLine("Stripping driver...");
-
-                    List<string> components = Directory.EnumerateDirectories(NvidiaExtractedPath).ToList();
-
-                    foreach (string c in components)
-                    {
-                        if (NvidiaCoreComponents.Contains(Path.GetFileName(c)))
-
-                        {
-                            continue;
-                        }
-                        Safe.DirectoryDelete(c, true);
-                    }
-                    // edit setup.cfg to prevent failure
-                    string text = File.ReadAllText(NvidiaExtractedPath + @"\setup.cfg");
-                    text = text.Replace(@"<file name=""${{EulaHtmlFile}}""/>", "");
-                    text = text.Replace(@"<file name=""${{FunctionalConsentFile}}""/>", "");
-                    text = text.Replace(@"<file name=""${{PrivacyPolicyFile}}""/>", "");
-                    File.WriteAllText(NvidiaExtractedPath + @"\setup.cfg", text);
-                }
-            }
-            else
-            {
-                Console.WriteLine("Driver modification requires WinRAR. Please install in the default location.");
-                Environment.Exit(1);
-            }
         }
 
         // TODO: Remove
@@ -718,7 +731,7 @@ namespace PicoGAUpdate
             }
         }
 
-        private static bool DownloadDriver(string url, string version, string destination)
+        private static bool DownloadDriver(DriverDetails driver, string destination)
         {
             // TODO: Figure what to do when downloading an older version
             // FIXME: Still gets called when using nodownload switch
@@ -729,16 +742,16 @@ namespace PicoGAUpdate
 
             if (File.Exists(destination) && !(OptionContainer.ForceDownload))
             {
-                Console.WriteLine("Using Existing installer at " + destination);
-                DownloadDone = true;
                 NewDownloader.Success = true;
+                Program.DownloadDone = true;
+                Console.WriteLine("Using Existing installer at " + destination);
             }
             else
             {
-                Console.WriteLine("Downloading Driver version " + version
+                Console.Write("Downloading Driver version " + driver.Version
                   + "...");
-                Task.Run(() => new NewDownloader().Download(url, destination));
-                while (!DownloadDone)
+                Task.Run(() => new NewDownloader().Download(driver.DownloadUrl, destination));
+                while (!Program.DownloadDone) // this breaks
                 {
                     // wait
                 }
@@ -750,6 +763,10 @@ namespace PicoGAUpdate
                         File.Delete(destination);
                     }
                     NewDownloader.RenameDownload(destination);
+                }
+                else
+                {
+                    Console.WriteLine("uh-oh...");
                 }
             }
             return NewDownloader.Success;
@@ -884,16 +901,5 @@ namespace PicoGAUpdate
                 return textReader.ReadToEnd();
             }
         }
-    }
-
-    internal static class WebsiteUrls
-    {
-        // TODO: Decypher those parameters to get desktop drivers when not on a notebook...
-        //public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&languageCode=1078&beta=null&isWHQL=0&dltype=-1&dch=1&upCRD=0&sort1=0&numberOfResults=10";
-        //public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&languageCode=1078&beta=null&isWHQL=0&dltype=-1&dch=0&upCRD=0&sort1=0&numberOfResults=30";
-        public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&beta=null&isWHQL=0&dltype=-1&dch=0&upCRD=0&sort1=0&numberOfResults=30";
-
-        // TODO: Cache results to avoid spamming the site
-        public const string RedditSource = "https://old.reddit.com/r/nvidia/search?q=Driver%20FAQ/Discussion&restrict_sr=1&sort=new";
     }
 }

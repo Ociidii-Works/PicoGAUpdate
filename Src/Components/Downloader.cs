@@ -8,6 +8,7 @@ namespace PicoGAUpdate.Components
     public class NewDownloader
     {
         public static bool DownloadCancelled;
+        public static int lastCursor;
         public static bool Success;
 
         public static void RenameDownload(string newName)
@@ -43,7 +44,8 @@ namespace PicoGAUpdate.Components
             {
                 // TODO: Add a no-connection timeout
                 _wc.DownloadProgressChanged += wc_DownloadProgressChanged;
-                _wc.DownloadFileCompleted += wc_DownloadFileCompleted;
+                _wc.DownloadFileCompleted += new AsyncCompletedEventHandler(wc_DownloadFileCompleted);
+
                 _wc.DownloadFileAsync(new Uri(url), FileName ?? throw new InvalidOperationException());
                 //wc.DownloadFile(new Uri(url), destination);
                 Console.CancelKeyPress += Console_CancelKeyPress;
@@ -114,6 +116,10 @@ namespace PicoGAUpdate.Components
         /// <param name="e"></param>
         private void wc_DownloadProgressChanged(object sender, DownloadProgressChangedEventArgs e)
         {
+            if (lastCursor < 1)
+            {
+                lastCursor = Console.CursorLeft;
+            }
             if (!_printing)
             {
                 if (e != null)
@@ -122,10 +128,17 @@ namespace PicoGAUpdate.Components
                     {
                         _totalDlSize = (e.TotalBytesToReceive / 1024 / 1024);
                     }
+                    // Work around a stupid bug
+                    if (e.TotalBytesToReceive == e.BytesReceived)
+                    {
+                        Program.DownloadDone = true;
+                        Success = true;
+                    }
                     long currentDlSize = (e.BytesReceived / 1024 / 1024);
                     Program.RollingOutput("                " + e.ProgressPercentage + "%" + AutoSpacer(e.ProgressPercentage) + "| " + currentDlSize
                         + AutoSpacer(currentDlSize) + "MB / " +
-                                          _totalDlSize + " MB");
+                                          _totalDlSize + " MB", false, lastCursor);
+
                     _printing = false;
                 }
 

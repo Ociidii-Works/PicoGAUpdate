@@ -67,8 +67,11 @@ namespace PicoGAUpdate.Components
         public static Option NoInstall = new Option("--noinstall", "-F", false,
             "Do not replace the current driver.");
 
+        public static Option NoStrip = new Option("--nostrip", "-X", false,
+        "Do not attempt to strip all components deemed useless by this tool's developer(s).");
+
         public static Option NoUpdate = new Option("--no-update", "-n", false,
-            "Do not attempt to download and run a new driver package. Useful in combination with --clean or --strip.");
+                    "Do not attempt to download and run a new driver package. Useful in combination with --clean or --strip.");
 
         public static List<Option> OptionsList = new List<Option>();
 
@@ -77,9 +80,6 @@ namespace PicoGAUpdate.Components
 
         public static Option Silent = new Option("--silent", "-s", false,
             "Run the installer silently.");
-
-        public static Option Strip = new Option("--strip", "-x", false,
-        "Attempt to strip all components deemed useless by this tool's developer(s).");
 
         public static Option Studio = new Option("--studio", "-S", false,
            "Use the NVIDIA Studio driver where available. Uses the GameReady driver otherwise.");
@@ -139,9 +139,10 @@ namespace PicoGAUpdate.Components
                     }
                     else
                     {
-                        // Console.WriteLine("No arguments given, using defaults");
-                        Strip.SetValue(false);
+                        Console.WriteLine("No arguments given, using defaults");
+                        NoStrip.SetValue(false);
                         Silent.SetValue(true);
+                        NoAudio.SetValue(false);
                     }
                 }
             }
