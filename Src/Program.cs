@@ -506,7 +506,10 @@ namespace PicoGAUpdate
                         {
                             try
                             {
-                                DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model));
+                                if (OptionContainer.NoAudio)
+                                {
+                                    DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model));
+                                }
                             }
                             catch (Exception) { };
                         }
