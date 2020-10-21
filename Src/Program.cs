@@ -82,6 +82,7 @@ namespace PicoGAUpdate
         }
 
         // TODO: Re-write logic to use inheritance and other fun logic to cascade which GPU is currently being processed instead of looping through vendors inside each function.
+        // Then this function goes after installing the driver, I guess. Not sure how the installer behaves when the device is not enabled.
         public static void DisableAudio()
         {
             ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
@@ -148,9 +149,10 @@ namespace PicoGAUpdate
             ManagementObjectCollection objCollection = objSearcher.Get();
             bool found = false;
             // TODO: Handle multiple display adapters. Needs testing.
+            // TODO: Replace with better code from DisableAudio()
             foreach (var o in objCollection)
             {
-                var obj = (ManagementObject) o;
+                var obj = (ManagementObject)o;
                 //string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
                 //Console.Out.WriteLine(info);
                 string mfg = obj["Manufacturer"]?.ToString().ToUpperInvariant();
