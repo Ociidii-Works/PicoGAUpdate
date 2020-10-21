@@ -100,7 +100,7 @@
     <Compile Include="Components\CheckAdmin.cs" />
     <Compile Include="Components\DisableHardware.cs" />
     <Compile Include="Components\Downloader.cs" />
-    <Compile Include="Components\LinkItem.cs" />
+    <Compile Include="Components\DriverDetails.cs" />
     <Compile Include="Components\MotherboardInfo.cs" />
     <Compile Include="Components\OptionContainer.cs" />
     <Compile Include="Components\Safe.IO.cs" />

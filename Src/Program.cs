@@ -12,7 +12,6 @@ using System.Management;
 using System.Net;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 
 namespace PicoGAUpdate
@@ -105,7 +104,7 @@ namespace PicoGAUpdate
                                 switch (model)
                                 {
                                     case "DEV_10F0": // NVIDIA HMDI Audio
-                                        DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model), true);
+                                        DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model));
                                         continue;
                                 }
                                 continue;
@@ -149,8 +148,9 @@ namespace PicoGAUpdate
             ManagementObjectCollection objCollection = objSearcher.Get();
             bool found = false;
             // TODO: Handle multiple display adapters. Needs testing.
-            foreach (ManagementObject obj in objCollection)
+            foreach (var o in objCollection)
             {
+                var obj = (ManagementObject) o;
                 //string info = String.Format("Device='{0}',Manufacturer='{1}',DriverVersion='{2}' ", obj["DeviceName"], obj["Manufacturer"], obj["DriverVersion"]);
                 //Console.Out.WriteLine(info);
                 string mfg = obj["Manufacturer"]?.ToString().ToUpperInvariant();
@@ -291,7 +291,7 @@ namespace PicoGAUpdate
         public static bool IsExpired(string filename, int hours)
         {
             var threshold = DateTime.Now.AddHours(hours);
-            var time = System.IO.File.GetCreationTime(filename);
+            var time = File.GetCreationTime(filename);
             return time >= threshold;
         }
 
@@ -493,11 +493,6 @@ namespace PicoGAUpdate
             Console.WriteLine("Done");
         }
 
-        private static string CollapseSpaces(string value)
-        {
-            return Regex.Replace(value, @"\s+", " ");
-        }
-
         private static void DeleteFilesFromDirectory(string directoryPath, bool verbose = false)
         {
             if (Directory.Exists(directoryPath))
@@ -577,13 +572,12 @@ namespace PicoGAUpdate
             }
         }
 
-        private static bool GetLatestDriverVersion(out LinkItem latestVersion)
+        private static bool GetDriverInfo(out DriverDetails latestVersion)
         {
             // FIXME: This shouldn't run unless we have to...
             Console.Write("                Finding latest Driver Version... ");
 
-            int textEndCursorPos = Console.CursorLeft;
-            WebClient w = new WebClient();
+            // WebClient();
             bool success = true;
             //Store result for a little bit
             string cached_result = Path.GetTempPath() + "\\DriverUpdate.SearchResults.txt";
@@ -602,19 +596,10 @@ namespace PicoGAUpdate
             var o = JObject.Parse(content);
             var ids = o["IDS"].Children().ToList();
             var item = ids[0]["downloadInfo"];
-            LinkItem tempObject = item.ToObject<LinkItem>();
+            DriverDetails tempObject = item.ToObject<DriverDetails>();
             var version = item["Version"];
             string spacing = "                      ";
-            Console.WriteLine(
-                String.Format("{1}\n{0}Release Date: {2}\n{0}Driver Type: {3}\n{0}Size: {4}\n{0}Details: {5}"
-                    , spacing
-                    , tempObject.Version + (use_cache ? " (cached)" : "")
-                    , tempObject.ReleaseDateTime
-                    , WebUtility.UrlDecode(tempObject.Name)
-                    , tempObject.DownloadURLFileSize
-                    , tempObject.DetailsURL
-                    )
-                );
+            Console.WriteLine("{1}\n{0}Release Date: {2}\n{0}Driver Type: {3}\n{0}Size: {4}\n{0}Details: {5}", spacing, tempObject.Version + (use_cache ? " (cached)" : ""), tempObject.ReleaseDateTime, WebUtility.UrlDecode(tempObject.Name), tempObject.DownloadURLFileSize, tempObject.DetailsURL);
             latestVersion = tempObject;
             return success;
         }
@@ -651,18 +636,18 @@ namespace PicoGAUpdate
                 // TODOL Deprecate this code path and chain-load download and installation inside getCurrentVersion (and rename it...)
                 // ReSharper disable once UnusedVariable
                 GetCurrentVersion(out string currentDriverVendor, out string currentDriverVersion);
-                bool success = GetLatestDriverVersion(out LinkItem latestDriver);
+                bool success = GetDriverInfo(out DriverDetails Driver);
                 // TODO: Make installer work without network connection
                 if (success)
                 {
                     // Fallback path
-                    string versionS = latestDriver.Version.ToString(CultureInfo.InvariantCulture);
+                    string versionS = Driver.Version.ToString(CultureInfo.InvariantCulture);
                     string InstallerPackageDestination = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
                     // TODO: Remove need for calling StringToFloat again
-                    bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(latestDriver.Version);
+                    bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(Driver.Version);
                     if (currentIsOutOfDate)
                     {
-                        Console.WriteLine("                A new driver version is available! ({0} => {1})", currentDriverVersion, latestDriver.Version);
+                        Console.WriteLine("                A new driver version is available! ({0} => {1})", currentDriverVersion, Driver.Version);
                     }
                     else if (OptionContainer.ForceDownload)
                     {
@@ -686,16 +671,16 @@ namespace PicoGAUpdate
                         {
                             Console.WriteLine("                Downloading driver as there is no local copy to process");
                         }
-                        DownloadDriver(latestDriver.DownloadUrl, latestDriver.Version, InstallerPackageDestination);
+                        DownloadDriver(Driver.DownloadUrl, Driver.Version, InstallerPackageDestination);
                     }
                     if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
-                        StripDriver(InstallerPackageDestination, latestDriver.Version);
+                        StripDriver(InstallerPackageDestination, Driver.Version);
 
                     // TODO: Add ExtractDriver step
                     // }
                     if (OptionContainer.ForceInstall || !OptionContainer.NoInstall)
                     {
-                        InstallDriver(InstallerPackageDestination, latestDriver.Version);
+                        InstallDriver(InstallerPackageDestination, Driver.Version);
                     }
                     else
                     {

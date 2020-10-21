@@ -40,6 +40,11 @@ namespace PicoGAUpdate.Components
 
     public class OptionContainer
     {
+        public static OptionContainer CreateInstance()
+        {
+            return new OptionContainer();
+        }
+
         public static Option BareDriver = new Option("--bare", "-X", false,
             "Only install the bare INF driver. Experimental.");
 
@@ -47,7 +52,7 @@ namespace PicoGAUpdate.Components
             "Cleans the installer \"leftovers\" in \'Installer2\'. Note: This will break the built-in uninstaller.");
 
         public static Option DeleteDownloaded = new Option("--keep", "-k", false,
-            "Delete the downloaded driver before exiting the program.");
+                    "Delete the downloaded driver before exiting the program.");
 
         public static Option DownloadOnly = new Option("--download-only", "-d", false,
             @"Do not run the downloaded driver. Useful with --keep.");

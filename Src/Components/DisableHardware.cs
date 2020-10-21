@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace PicoGAUpdate.Components
 {
+    [SuppressMessage("ReSharper", "InconsistentNaming")]
+    [SuppressMessage("ReSharper", "UnusedMember.Local")]
     public static class DisableHardware
     {
         static DisableHardware()
@@ -101,7 +104,9 @@ namespace PicoGAUpdate.Components
         private const uint ERROR_ELEMENT_NOT_FOUND = 1168;
         private const uint ERROR_INVALID_DATA = 13;
         private const uint ERROR_NO_MORE_ITEMS = 259;
+        // ReSharper disable once NotAccessedField.Local
         private static DEVPROPKEY DEVPKEY_Device_DeviceDesc;
+        // ReSharper disable once NotAccessedField.Local
         private static DEVPROPKEY DEVPKEY_Device_HardwareIds;
 
         private static void CheckError(string message, int lasterror = -1)
@@ -116,6 +121,7 @@ namespace PicoGAUpdate.Components
         private static string GetStringPropertyForDevice(IntPtr info, SP_DEVINFO_DATA devdata,
             uint propId)
         {
+            // ReSharper disable once NotAccessedVariable
             uint proptype, outsize;
             IntPtr buffer = IntPtr.Zero;
             try
