@@ -41,6 +41,7 @@ namespace PicoGAUpdate.Components
             Program.DownloadDone = false;
             using (_wc = new WebClient())
             {
+                // TODO: Add a no-connection timeout
                 _wc.DownloadProgressChanged += wc_DownloadProgressChanged;
                 _wc.DownloadFileCompleted += wc_DownloadFileCompleted;
                 _wc.DownloadFileAsync(new Uri(url), FileName ?? throw new InvalidOperationException());

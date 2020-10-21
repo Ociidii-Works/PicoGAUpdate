@@ -40,11 +40,6 @@ namespace PicoGAUpdate.Components
 
     public class OptionContainer
     {
-        public static OptionContainer CreateInstance()
-        {
-            return new OptionContainer();
-        }
-
         public static Option BareDriver = new Option("--bare", "-X", false,
             "Only install the bare INF driver. Experimental.");
 
@@ -73,11 +68,12 @@ namespace PicoGAUpdate.Components
             "Do not replace the current driver.");
 
         public static Option NoUpdate = new Option("--no-update", "-n", false,
-            "Do not attempt to download and run a new driver package. Useful in combination with " + Clean.GetLongSwitch() +
-            " or " + Strip.GetLongSwitch() + ".");
+            "Do not attempt to download and run a new driver package. Useful in combination with --clean or --strip.");
+
+        public static List<Option> OptionsList = new List<Option>();
 
         public static Option Pretend = new Option("--pretend", "-p", false,
-            "Skip running the installer. Useful for debugging or preview changes.");
+                    "Skip running the installer. Useful for debugging or preview changes.");
 
         public static Option Silent = new Option("--silent", "-s", false,
             "Run the installer silently.");
@@ -215,7 +211,6 @@ namespace PicoGAUpdate.Components
                 LongSwitch = longSwitch;
                 ShortSwitch = shortSwitch;
                 HelpText = helpText;
-                OptionsList.Add(this);
             }
 
             protected bool Equals(Option other)
@@ -251,7 +246,5 @@ namespace PicoGAUpdate.Components
                 return Program.AutoPad(thisline, 25) + ht + Environment.NewLine;
             }
         }
-
-        private static List<Option> OptionsList = new List<Option>();
     }
 }

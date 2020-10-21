@@ -75,7 +75,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup>
-    <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -109,6 +109,9 @@
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig">
+      <Link>.editorconfig</Link>
+    </None>
     <None Include="app.config" />
     <None Include="Components\app.manifest" />
     <None Include="Components\Scripts\Update_and_strip.bat" />
@@ -130,9 +133,8 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe" sign /fd sha256 /a $(TargetPath)
-"C:\Program Files (x86)\Windows Kits\10\App Certification Kit\signtool.exe" timestamp -t http://timestamp.verisign.com/scripts/timstamp.dll $(TargetPath)
-copy $(ProjectDir)\Components\Scripts\* $(TargetDir)</PostBuildEvent>
+    <PostBuildEvent>
+    </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
     <PreBuildEvent>

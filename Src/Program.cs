@@ -20,16 +20,16 @@ namespace PicoGAUpdate
     internal static class Program
     {
         public static readonly IList<String> NvidiaCoreComponents = new ReadOnlyCollection<string>(new List<String> {
-                            "Display.Driver",
-                            "NVI2",
-                            "PhysX",
-                            "NvContainer"
-                        });
+       "Display.Driver",
+       "NVI2",
+       "PhysX",
+       "NvContainer"});
 
         public static readonly string NvidiaExtractedPath = Path.GetTempPath() + @"DriverUpdateEXNvidia";
         public static bool DownloadDone;
 
         public static bool ExitImmediately = true;
+        public static Version LatestNvidiaVersion = new Version(0, 0, 0, 0);
 
         public static string AutoPad(string stringIn, int targetLength = 0)
         {
@@ -40,7 +40,7 @@ namespace PicoGAUpdate
             }
             while (stringIn != null && stringIn.Length < targetLength)
             {
-                stringIn += " ";
+                stringIn += "";
             }
             Console.SetCursorPosition(0, Console.CursorTop);
             return stringIn;
@@ -56,7 +56,7 @@ namespace PicoGAUpdate
             string spaces = "";
             while (string_in.Length + spaces.Length < target_length)
             {
-                spaces += " ";
+                spaces += "";
             }
             string_in = spaces + string_in;
             return string_in;
@@ -76,12 +76,11 @@ namespace PicoGAUpdate
             foreach (DirectoryInfo diSourceSubDir in source.GetDirectories())
             {
                 DirectoryInfo nextTargetSubDir =
-                    target.CreateSubdirectory(diSourceSubDir.Name);
+                 target.CreateSubdirectory(diSourceSubDir.Name);
                 CopyAll(diSourceSubDir, nextTargetSubDir);
             }
         }
 
-        // TODO: Re-write logic to use inheritance and other fun logic to cascade which GPU is currently being processed instead of looping through vendors inside each function.
         // Then this function goes after installing the driver, I guess. Not sure how the installer behaves when the device is not enabled.
         public static void DisableAudio()
         {
@@ -115,16 +114,19 @@ namespace PicoGAUpdate
             }
         }
 
+        // TODO: Re-write logic to use inheritance and other fun logic to cascade which GPU is currently being processed instead of looping through vendors inside each function.
         public static string Dump(object obj)
         {
             return JsonConvert.SerializeObject(obj);
         }
 
+        // TODO: Remove in favor of ProcessRawDevices
         public static string GetChipsetModel()
         {
-            Console.WriteLine("*    Motherboard");
-            Console.WriteLine("         Manufacturer: " + MotherboardInfo.Manufacturer);
-            Console.WriteLine("         Product: " + MotherboardInfo.Product);
+            Console.WriteLine("* Motherboard");
+            Console.WriteLine("Manufacturer: " + MotherboardInfo.Manufacturer);
+            Console.WriteLine("Product: " + MotherboardInfo.Product);
+            Console.WriteLine("ID: " + MotherboardInfo.PNPDeviceID);
             Console.Out.Flush();
             // A crude implementation until more testing is done
             if (MotherboardInfo.Product != null)
@@ -139,12 +141,11 @@ namespace PicoGAUpdate
 
         // TODO: Make generic device enumerator that includes other device types
         // TODO: Make function launch downloader and installer for each device to work around having to stop at the first match
-        public static void GetCurrentVersion(out string out_vendor, out string out_version)
+        public static void GetCurrentDevicesDeprecated(string vendor_string, out string out_version)
         {
-            Console.Write("         Finding display adapters...");
+            Console.Write("Finding display adapters...");
             // Add fallback value required for math, if driver is missing/not detected.
             out_version = "000.00";
-            out_vendor = "";
             ManagementObjectSearcher objSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
             ManagementObjectCollection objCollection = objSearcher.Get();
             bool found = false;
@@ -168,39 +169,39 @@ namespace PicoGAUpdate
 
                             // TODO: List match unless much slower.
                             if ((device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") ||
-                                 device.Contains("Tesla")))
+                              device.Contains("Tesla")))
                             {
                                 // Rebuild version according to the nvidia format
                                 string[] version = obj["DriverVersion"].ToString().Split('.');
                                 {
                                     string nvidiaVersion =
-                                        ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3,
-                                            ".");
-                                    Console.WriteLine("             NVIDIA Driver v" + nvidiaVersion);
+                                     ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3,
+                                      ".");
+                                    Console.WriteLine("NVIDIA Driver v" + nvidiaVersion);
                                     out_version = nvidiaVersion;
                                     found = true;
                                 }
                             }
 
-                            out_vendor = "NVIDIA";
+                            vendor_string = "NVIDIA";
                         }
                         break;
 
                     case "AMD":
                         {
                             string device = obj["DeviceName"].ToString();
-                            Console.WriteLine("         Found AMD device '" + device + "'");
+                            Console.WriteLine("Found AMD device '" + device + "'");
                             Console.WriteLine(
-                                "             Sorry, support for AMD graphic cards is not currently implemented.");
+                             "Sorry, support for AMD graphic cards is not currently implemented.");
                         }
                         break;
 
                     case "INTEL":
                         {
                             string device = obj["DeviceName"].ToString();
-                            Console.WriteLine("         Found Intel device '" + device + "'");
+                            Console.WriteLine("Found Intel device '" + device + "'");
                             Console.WriteLine(
-                                "             Sorry, support for Intel graphic cards is not currently implemented.");
+                             "Sorry, support for Intel graphic cards is not currently implemented.");
                         }
                         break;
                 }
@@ -219,13 +220,13 @@ namespace PicoGAUpdate
                     var obj = (ManagementObject)o;
                     string deviceID = obj["PNPDeviceID"].ToString();
                     string vendor = deviceID.Split('&').First().Split('\\').ElementAt(1);
-                    //string info = String.Format("           {3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
-                    string info = String.Format("           {0}", vendor);
+                    //string info = String.Format("{3} -- {0}, Driver version '{1}'", obj["DeviceName"], obj["DriverVersion"], obj["PNPDeviceID"]);
+                    string info = String.Format("{0}", vendor);
                     Console.Out.WriteLine(info);
                     switch (vendor)
                     {
                         case "VEN_10DE": // NVIDIA
-                            out_vendor = "NVIDIA";
+                            vendor_string = "NVIDIA";
                             break;
                     }
 
@@ -234,7 +235,7 @@ namespace PicoGAUpdate
             }
         }
 
-        public static bool InstallDriver(string installerPath, string version)
+        public static bool InstallDriver(string installerPath)
         {
             try
             {
@@ -255,8 +256,7 @@ namespace PicoGAUpdate
                     }
                     else
                     {
-                        Console.WriteLine("Running GUI Installer"
-                        + "...");
+                        Console.WriteLine("Running GUI Installer" + "...");
                     }
                     //if (!System.Diagnostics.Debugger.IsAttached)
                     {
@@ -285,16 +285,196 @@ namespace PicoGAUpdate
 
         [DllImport("Setupapi.dll", EntryPoint = "InstallHinfSection", CallingConvention = CallingConvention.StdCall)]
         public static extern void InstallHinfSection(
-                                    [In] IntPtr hwnd,
-                                    [In] IntPtr ModuleHandle,
-                                    [In, MarshalAs(UnmanagedType.LPWStr)] string CmdLineBuffer,
-                                    int nCmdShow);
+               [In] IntPtr hwnd,
+               [In] IntPtr ModuleHandle,
+               [In, MarshalAs(UnmanagedType.LPWStr)] string CmdLineBuffer,
+               int nCmdShow);
 
         public static bool IsExpired(string filename, int hours)
         {
             var threshold = DateTime.Now.AddHours(hours);
             var time = File.GetCreationTime(filename);
             return time >= threshold;
+        }
+
+        public static bool LookupForDriverDetails(string vendor, out List<DriverDetails> out_details)
+        {
+            out_details = new List<DriverDetails>();
+            bool success = true;
+            if (string.IsNullOrEmpty(vendor))
+            {
+                return false;
+            }
+            try
+            {
+                // FIXME: This shouldn't run unless we have to...
+                Console.Write("Finding latest Driver Version... ");
+                //Store result for a little bit
+                string cached_result = Path.GetTempPath() + "\\DriverUpdate.SearchResults." + vendor + ".txt";
+                var content = "";
+                bool use_cache = File.Exists(cached_result) && !IsExpired(cached_result, 4);
+                if (use_cache)
+                {
+                    content = File.ReadAllText(cached_result);
+                }
+                // Will fall through if file is empty
+                if (string.IsNullOrEmpty(content))
+                {
+                    try
+                    {
+                        content = ReadTextFromUrl(WebsiteUrls.NvSource);
+                    }
+                    catch (Exception)
+                    {
+                        Console.WriteLine("Unable to contact NVIDIA website");
+                        return false;
+                    }
+                    File.WriteAllText(cached_result, content);
+                }
+                var o = JObject.Parse(content);
+                var ids = o["IDS"].Children().ToList();
+                foreach (var id in ids)
+                {
+                    var item = id["downloadInfo"];
+                    if (item != null)
+                    {
+                        DriverDetails temp_driver = item.ToObject<DriverDetails>();
+                        if (temp_driver != null)
+                        {
+                            out_details.Add(temp_driver);
+                            //var version = item["Version"];
+                            //string spacing = "        ";
+                            //Console.WriteLine("\n* {1}:\n{0}Release Date: {2}\n{0}Driver Type:  {3}\n{0}Size:         {4}\n{0}Details:      {5}", spacing,
+                            //    temp_driver.Version,
+                            //    temp_driver.ReleaseDateTime,
+                            //    WebUtility.UrlDecode(temp_driver.Name),
+                            //    temp_driver.DownloadURLFileSize,
+                            //    temp_driver.DetailsURL);
+                        }
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                success = false;
+            }
+            return success;
+        }
+
+        public static void ProcessRawDevices()
+        {
+            ManagementObjectSearcher pnpEntitySearcher = new ManagementObjectSearcher("Select * from Win32_PnPEntity");
+            foreach (var o in pnpEntitySearcher.Get())
+            {
+                var queryObj = (ManagementObject)o;
+                var rawDeviceID = queryObj["PNPDeviceID"]?.ToString();
+                if (null == rawDeviceID)
+                {
+                    continue;
+                }
+                if (!rawDeviceID.ToString().StartsWith("PCI\\"))
+                {
+                    continue;
+                }
+                List<string> deviceID = rawDeviceID.ToString().Substring(4).Split('&').ToList();
+                if (null == deviceID)
+                {
+                    continue;
+                }
+                string vendor = deviceID.ElementAt(0);
+                string model = deviceID.ElementAt(1);
+                Version no_version = new Version(0, 0, 0, 0);
+                switch (vendor)
+                {
+                    default:
+                        break;
+
+                    case "VEN_10DE": // NVIDIA
+                        if ("DEV_10F0" == model) // NVIDIA HMDI Audio
+                        {
+                            try
+                            {
+                                DisableHardware.DisableDevice(n => n.ToUpperInvariant().Contains(vendor + "&" + model));
+                            }
+                            catch (Exception) { };
+                        }
+                        else
+                        {
+                            // TODO: Better handling of "replace outdated driver with same outdated driver" in case it is present and no update check was desired, and force-install was enabled, etc etc.
+                            if (OptionContainer.NoUpdate)
+                            {
+                                continue;
+                            }
+                            if (LatestNvidiaVersion != null)
+                            {
+                                LookupForDriverDetails("NVIDIA", out List<DriverDetails> out_details);
+                                if (out_details.Count > 0)
+                                {
+                                    LatestNvidiaVersion = out_details.First().Version;
+                                    Console.WriteLine(LatestNvidiaVersion);
+                                }
+                                ManagementObjectSearcher signedDriverSearcher = new ManagementObjectSearcher("Select * from Win32_PnPSignedDriver");
+                                foreach (var p in signedDriverSearcher.Get())
+                                {
+                                    try
+                                    {
+                                        var queryDriver = (ManagementObject)p;
+                                        var mfg = queryDriver["Manufacturer"]?.ToString()?.ToUpperInvariant();
+                                        if ("NVIDIA" != mfg)
+                                        {
+                                            continue;
+                                        }
+                                        string device = queryDriver["DeviceName"].ToString();
+                                        Version current_version = no_version;
+                                        if (device.Contains("GeForce") || device.Contains("TITAN") || device.Contains("Quadro") || device.Contains("Tesla"))
+                                        {
+                                            string[] version = queryDriver["DriverVersion"].ToString().Split('.');
+                                            current_version = new Version(
+                                             ((version.GetValue(2) + version.GetValue(3)?.ToString()).Substring(1)).Insert(3,
+                                              "."));
+                                            Console.WriteLine("Current driver: " + current_version.ToString());
+                                            if (LatestNvidiaVersion > current_version && !OptionContainer.NoUpdate)
+                                            {
+                                                Console.WriteLine("A new driver version is available!");
+                                                if (OptionContainer.NoDownload)
+                                                {
+                                                    continue;
+                                                }
+                                                var latest_driver = out_details.First();
+                                                var installer_file = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", latest_driver.Version.ToString());
+                                                if (DownloadDriver(latest_driver.DownloadUrl, latest_driver.Version.ToString(), installer_file))
+                                                {
+                                                    if (OptionContainer.NoInstall)
+                                                    {
+                                                        continue;
+                                                    }
+                                                    if (InstallDriver(installer_file))
+                                                    {
+                                                        if (!OptionContainer.Strip)
+                                                        {
+                                                            continue;
+                                                        }
+                                                        StripDriver(installer_file);
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                    catch (Exception) { }
+                                }
+                            }
+                        }
+                        break;
+
+                    case "AMD":
+                        // [...]
+                        // if ("ADVANCED MICRO DEVICES" != mfg)
+                        // {
+                        //      continue;
+                        // }
+                        break;
+                }
+            }
         }
 
         public static void RollingOutput(string data, bool clearRestOfLine = false)
@@ -361,7 +541,7 @@ namespace PicoGAUpdate
                 try
                 {
                     float.TryParse(input,
-                        NumberStyles.Currency, ci, out version);
+                     NumberStyles.Currency, ci, out version);
                 }
                 catch (FormatException)
                 {
@@ -371,7 +551,7 @@ namespace PicoGAUpdate
             return version;
         }
 
-        public static void StripDriver(string installerPath, string version)
+        public static void StripDriver(string installerPath)
         {
             if (!File.Exists(installerPath))
             {
@@ -381,7 +561,7 @@ namespace PicoGAUpdate
             string winRar = "";
             // 64-bit Winrar on 64-bit architecture
             string winRar6432P = Environment.GetEnvironmentVariable("ProgramW6432") +
-                                 @"\WinRAR\WinRAR.exe";
+                  @"\WinRAR\WinRAR.exe";
             // 64-bit WinRAR from 32-bit app
             string winRar6464P = Environment.SpecialFolder.ProgramFiles + @"\WinRAR\WinRAR.exe";
             // 32-bit Winrar on 64-bit architecture
@@ -411,12 +591,12 @@ namespace PicoGAUpdate
                     Process wProcess = new Process
                     {
                         StartInfo =
-                        {
-                            FileName = winRar,
-                            UseShellExecute = false,
-                            CreateNoWindow = false,
-                            Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, NvidiaExtractedPath)
-                        }
+      {
+       FileName = winRar,
+       UseShellExecute = false,
+       CreateNoWindow = false,
+       Arguments = String.Format("x -ibck -mt2 -o+ -inul {0} {1}", installerPath, NvidiaExtractedPath)
+      }
                     };
                     Console.Write("Extracting installer '" + installerPath + "'");
                     Console.WriteLine("");
@@ -436,7 +616,7 @@ namespace PicoGAUpdate
                     }
                 }
 
-                // Hack up the installer a little to remove unwanted "features" such as Telemetry
+                // Hack up the installer a little to remove unwanted "features"such as Telemetry
                 if (OptionContainer.Strip)
                 {
                     Console.WriteLine("Stripping driver...");
@@ -538,25 +718,25 @@ namespace PicoGAUpdate
             }
         }
 
-        private static void DownloadDriver(string url, string version, string destination)
+        private static bool DownloadDriver(string url, string version, string destination)
         {
             // TODO: Figure what to do when downloading an older version
             // FIXME: Still gets called when using nodownload switch
             if (OptionContainer.NoDownload)
             {
-                return;
+                return false;
             }
 
             if (File.Exists(destination) && !(OptionContainer.ForceDownload))
             {
-                Console.WriteLine("            Using Existing installer at " + destination);
+                Console.WriteLine("Using Existing installer at " + destination);
                 DownloadDone = true;
                 NewDownloader.Success = true;
             }
             else
             {
-                Console.WriteLine("                Downloading Driver version " + version
-                     + "...");
+                Console.WriteLine("Downloading Driver version " + version
+                  + "...");
                 Task.Run(() => new NewDownloader().Download(url, destination));
                 while (!DownloadDone)
                 {
@@ -572,38 +752,7 @@ namespace PicoGAUpdate
                     NewDownloader.RenameDownload(destination);
                 }
             }
-        }
-
-        private static bool GetDriverInfo(out DriverDetails latestVersion)
-        {
-            // FIXME: This shouldn't run unless we have to...
-            Console.Write("                Finding latest Driver Version... ");
-
-            // WebClient();
-            bool success = true;
-            //Store result for a little bit
-            string cached_result = Path.GetTempPath() + "\\DriverUpdate.SearchResults.txt";
-            var content = "";
-            bool use_cache = File.Exists(cached_result) && !IsExpired(cached_result, 4);
-            if (use_cache)
-            {
-                content = File.ReadAllText(cached_result);
-            }
-            else
-            {
-                content = ReadTextFromUrl(WebsiteUrls.NvSource);
-                File.WriteAllText(cached_result, content);
-            }
-            //var decoded_data = WebUtility.UrlDecode(aaaa);
-            var o = JObject.Parse(content);
-            var ids = o["IDS"].Children().ToList();
-            var item = ids[0]["downloadInfo"];
-            DriverDetails tempObject = item.ToObject<DriverDetails>();
-            var version = item["Version"];
-            string spacing = "                      ";
-            Console.WriteLine("{1}\n{0}Release Date: {2}\n{0}Driver Type: {3}\n{0}Size: {4}\n{0}Details: {5}", spacing, tempObject.Version + (use_cache ? " (cached)" : ""), tempObject.ReleaseDateTime, WebUtility.UrlDecode(tempObject.Name), tempObject.DownloadURLFileSize, tempObject.DetailsURL);
-            latestVersion = tempObject;
-            return success;
+            return NewDownloader.Success;
         }
 
         private static void Main(string[] args)
@@ -623,105 +772,101 @@ namespace PicoGAUpdate
 
         private static void MainProgramLoop()
         {
-            //OptionContainer.Option.Parse(args);
-            if (!OptionContainer.NoUpdate)
+            //// WIP Chipset updater
+            //switch (GetChipsetModel())
+            //{
+            //    case "X570":
+            //        // TODO: Get url
+            //        Console.WriteLine("Your chipset was recognized, but Chipset driver download is still a Work In Progress!");
+            //        break;
+            //}
+            ProcessRawDevices();
+            // TODOL Deprecate this code path and chain-load download and installation inside getCurrentVersion (and rename it...)
+            // ReSharper disable once UnusedVariable
+            //GetCurrentVersion(out string currentDriverVendor, out string currentDriverVersion);
+            //bool success = GetDriverInfo(out DriverDetails Driver);
+            //// TODO: Make installer work without network connection
+            //if (success)
+            //{
+            // // Fallback path
+            // string versionS = Driver.Version.ToString(CultureInfo.InvariantCulture);
+            // string InstallerPackageDestination = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
+            // // TODO: Remove need for calling StringToFloat again
+            // bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(Driver.Version);
+            // if (currentIsOutOfDate)
+            // {
+            //  Console.WriteLine("A new driver version is available! ({0} => {1})", currentDriverVersion, Driver.Version);
+            // }
+            // else if (OptionContainer.ForceDownload)
+            // {
+            //  Console.WriteLine("Downloading driver as requested.");
+            // }
+            // else if (!OptionContainer.ForceInstall)
+            // {
+            //  Console.WriteLine("Your driver is up-to-date! Well done!");
+            // }
+            // bool no_downloaded_driver = (!File.Exists(NvidiaExtractedPath + @"\"+
+            //                "setup.exe") &&
+            //               !File.Exists(InstallerPackageDestination));
+            // // TODO: Handle missing file inside the proper function to allow different vendors and partial recovery from missing file instead of downloading everything for no reason
+            // //if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
+            // bool do_download = (OptionContainer.ForceDownload || (!OptionContainer.NoUpdate && currentIsOutOfDate) ||
+            //               (OptionContainer.ForceInstall && no_downloaded_driver));
+            // //if (OptionContainer.ForceDownload || !File.Exists(InstallerPackageDestination) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
+            // if (!OptionContainer.NoDownload && do_download)
+            // {
+            //  if (no_downloaded_driver)
+            //  {
+            //   Console.WriteLine("Downloading driver as there is no local copy to process");
+            //  }
+            //  DownloadDriver(Driver.DownloadUrl, Driver.Version, InstallerPackageDestination);
+            // }
+            // if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
+            //  StripDriver(InstallerPackageDestination, Driver.Version);
+            //
+            // // TODO: Add ExtractDriver step
+            // // }
+            // if (OptionContainer.ForceInstall || !OptionContainer.NoInstall)
+            // {
+            //  InstallDriver(InstallerPackageDestination, Driver.Version);
+            // }
+            // else
+            // {
+            //  // show baloon tip
+            //  // Program.sTrayIcon.ShowBalloonTi
+            // }
+            // if (OptionContainer.NoAudio)
+            // {
+            //  DisableAudio();
+            // }
+            //
+            // if (OptionContainer.DeleteDownloaded)
+            // {
+            //  try
+            //  {
+            //   File.Delete(InstallerPackageDestination);
+            //  }
+            //  catch (Exception e)
+            //  {
+            //   Console.WriteLine(e);
+            //  }
+            // }
+            //}
+            //if (dirty && OptionContainer.Strip)
+            //{
+            //	Stripper.StripComponentsViaUninstall();
+            //}
+            if (OptionContainer.Clean)
             {
-                // WIP Chipset updater
-                switch (GetChipsetModel())
-                {
-                    case "X570":
-                        // TODO: Get url
-                        Console.WriteLine("         Your chipset was recognized, but Chipset driver download is still a Work In Progress!");
-                        break;
-                }
-                Console.WriteLine("*    Graphic Adapter(s)");
-                // TODOL Deprecate this code path and chain-load download and installation inside getCurrentVersion (and rename it...)
-                // ReSharper disable once UnusedVariable
-                GetCurrentVersion(out string currentDriverVendor, out string currentDriverVersion);
-                bool success = GetDriverInfo(out DriverDetails Driver);
-                // TODO: Make installer work without network connection
-                if (success)
-                {
-                    // Fallback path
-                    string versionS = Driver.Version.ToString(CultureInfo.InvariantCulture);
-                    string InstallerPackageDestination = String.Format(@"{0}{1}.{2}.exe", Path.GetTempPath(), "DriverUpdate", versionS);
-                    // TODO: Remove need for calling StringToFloat again
-                    bool currentIsOutOfDate = StringToFloat(currentDriverVersion) < StringToFloat(Driver.Version);
-                    if (currentIsOutOfDate)
-                    {
-                        Console.WriteLine("                A new driver version is available! ({0} => {1})", currentDriverVersion, Driver.Version);
-                    }
-                    else if (OptionContainer.ForceDownload)
-                    {
-                        Console.WriteLine("             Downloading driver as requested.");
-                    }
-                    else if (!OptionContainer.ForceInstall)
-                    {
-                        Console.WriteLine("                Your driver is up-to-date! Well done!");
-                    }
-                    bool no_downloaded_driver = (!File.Exists(NvidiaExtractedPath + @"\" +
-                                                                               "setup.exe") &&
-                                                                           !File.Exists(InstallerPackageDestination));
-                    // TODO: Handle missing file inside the proper function to allow different vendors and partial recovery from missing file instead of downloading everything for no reason
-                    //if (!File.Exists(downloadedFile) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
-                    bool do_download = (OptionContainer.ForceDownload || (!OptionContainer.NoUpdate && currentIsOutOfDate) ||
-                                                                         (OptionContainer.ForceInstall && no_downloaded_driver));
-                    //if (OptionContainer.ForceDownload || !File.Exists(InstallerPackageDestination) || OptionContainer.ForceDownload || (currentIsOutOfDate && OptionContainer.ForceInstall && (!Directory.Exists(NvidiaExtractedPath))))
-                    if (!OptionContainer.NoDownload && do_download)
-                    {
-                        if (no_downloaded_driver)
-                        {
-                            Console.WriteLine("                Downloading driver as there is no local copy to process");
-                        }
-                        DownloadDriver(Driver.DownloadUrl, Driver.Version, InstallerPackageDestination);
-                    }
-                    if (currentIsOutOfDate || OptionContainer.ForceInstall) // TODO: Run on extracted path if present instead of relying on file version
-                        StripDriver(InstallerPackageDestination, Driver.Version);
+                Cleanup();
+            }
 
-                    // TODO: Add ExtractDriver step
-                    // }
-                    if (OptionContainer.ForceInstall || !OptionContainer.NoInstall)
-                    {
-                        InstallDriver(InstallerPackageDestination, Driver.Version);
-                    }
-                    else
-                    {
-                        // show baloon tip
-                        // Program.sTrayIcon.ShowBalloonTi
-                    }
-                    if (OptionContainer.NoAudio)
-                    {
-                        DisableAudio();
-                    }
-
-                    if (OptionContainer.DeleteDownloaded)
-                    {
-                        try
-                        {
-                            File.Delete(InstallerPackageDestination);
-                        }
-                        catch (Exception e)
-                        {
-                            Console.WriteLine(e);
-                        }
-                    }
-                }
-                //if (dirty && OptionContainer.Strip)
-                //{
-                //	Stripper.StripComponentsViaUninstall();
-                //}
-                if (OptionContainer.Clean)
-                {
-                    Cleanup();
-                }
-
-                if (!ExitImmediately)
-                {
-                    Console.WriteLine();
-                    Console.Out.Flush();
-                    Console.WriteLine("Press any key to exit...");
-                    Console.ReadKey();
-                }
+            if (!ExitImmediately)
+            {
+                Console.WriteLine();
+                Console.Out.Flush();
+                Console.WriteLine("Press any key to exit...");
+                Console.ReadKey();
             }
         }
 
@@ -743,7 +888,10 @@ namespace PicoGAUpdate
 
     internal static class WebsiteUrls
     {
-        public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&languageCode=1078&beta=null&isWHQL=0&dltype=-1&dch=1&upCRD=0&sort1=0&numberOfResults=10";
+        // TODO: Decypher those parameters to get desktop drivers when not on a notebook...
+        //public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&languageCode=1078&beta=null&isWHQL=0&dltype=-1&dch=1&upCRD=0&sort1=0&numberOfResults=10";
+        //public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&languageCode=1078&beta=null&isWHQL=0&dltype=-1&dch=0&upCRD=0&sort1=0&numberOfResults=30";
+        public const string NvSource = "https://gfwsl.geforce.com/services_toolkit/services/com/nvidia/services/AjaxDriverService.php?func=DriverManualLookup&psid=111&pfid=890&osID=57&beta=null&isWHQL=0&dltype=-1&dch=0&upCRD=0&sort1=0&numberOfResults=30";
 
         // TODO: Cache results to avoid spamming the site
         public const string RedditSource = "https://old.reddit.com/r/nvidia/search?q=Driver%20FAQ/Discussion&restrict_sr=1&sort=new";

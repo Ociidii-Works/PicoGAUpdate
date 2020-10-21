@@ -104,8 +104,10 @@ namespace PicoGAUpdate.Components
         private const uint ERROR_ELEMENT_NOT_FOUND = 1168;
         private const uint ERROR_INVALID_DATA = 13;
         private const uint ERROR_NO_MORE_ITEMS = 259;
+
         // ReSharper disable once NotAccessedField.Local
         private static DEVPROPKEY DEVPKEY_Device_DeviceDesc;
+
         // ReSharper disable once NotAccessedField.Local
         private static DEVPROPKEY DEVPKEY_Device_HardwareIds;
 
