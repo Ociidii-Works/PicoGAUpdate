@@ -1,7 +1,8 @@
 # PicoGAUpdate
 Small utility to update graphics drivers
 
-### This tool has been largely superceded by [NVCleanInstall](https://www.techpowerup.com/nvcleanstall/) for NVIDIA devices, but is not abandoned.
+### This tool offers very limited customizability and is mostly intended for automation purposes.
+If you require fine-grained features selection for NVIDIA devices, see [NVCleanInstall](https://www.techpowerup.com/nvcleanstall/) instead.
 
 Consult the output of the `--help` command for all options.
 
