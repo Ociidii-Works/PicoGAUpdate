@@ -1,3 +1,4 @@
+![GitHub commits since latest release (by date)](https://img.shields.io/github/commits-since/Ociidii-Works/PicoGAUpdate/latest)
 # PicoGAUpdate
 Small utility to update graphics drivers
 
